@@ -6,6 +6,7 @@ channels:
   - defaults
 dependencies:
   - cudatoolkit=11.3
+  - flake8=4.0
   - flask=2.1
   - numpy=1.22
   - pillow=9.0
