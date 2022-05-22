@@ -2,3 +2,4 @@ vlslice/client/node_modules/
 vlslice/client/public/build/
 vlslice/server/flask_session/
 .DS_Store
+.vscode
