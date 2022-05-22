@@ -1,0 +1,22 @@
+flask:
+  session_permanent: True
+  session_type: filesystem
+data:
+  start: 42
+  exclude_classes:
+    - Human eye
+    - Human skull
+    - Human head
+    - Human face
+    - Human mouth
+    - Human ear
+    - Human nose
+    - Human hair
+    - Human hand
+    - Human foot
+    - Human arm
+    - Human leg
+    - Human beard
+    - Human body
+    - Tire
+    - Wheel
