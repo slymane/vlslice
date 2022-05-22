@@ -3,3 +3,4 @@ vlslice/client/public/build/
 vlslice/server/flask_session/
 .DS_Store
 .vscode
+__pycache__
