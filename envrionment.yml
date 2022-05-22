@@ -1,0 +1,19 @@
+name: vlslice
+channels:
+  - pytorch
+  - huggingface
+  - conda-forge
+  - defaults
+dependencies:
+  - cudatoolkit=11.3
+  - flask=2.1
+  - numpy=1.22
+  - pillow=9.0
+  - pytables=3.7
+  - python=3.10
+  - pytorch=1.11
+  - pyyaml=6.0
+  - scikit-learn=1.0
+  - scikit-learn-intelex=2021.4
+  - scipy=1.8
+  - transformers=4.18
