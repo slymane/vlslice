@@ -26,7 +26,6 @@ args = parser.parse_args()
 
 # YAML CONFIG
 cfg = yaml.load(open(args.config, 'r'), Loader=yaml.CLoader)
-print(cfg)
 
 # FLASK APP CONFIG
 app = Flask(__name__)
@@ -126,6 +125,7 @@ def filter():
 
     g.df = pd.DataFrame(pd_data, columns=['id', 'mean', 'var', 'count'])
     return jsonify(json_data)
+
 
 # Path for main Svelte page
 @app.route('/')

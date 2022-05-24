@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { Button } from 'sveltestrap';
 
 	// Filtering Variables
 	let fltrBaseline = null;
@@ -40,7 +41,7 @@
 		<input bind:value={fltrBaseline} placeholder="Baseline...">
 		<input bind:value={fltrAugment} placeholder="Augment...">
 		<input type=number bind:value={fltrK} placeholder="topk..." min=1 max=10000>
-		<button on:click={filter}>Filter</button>
+		<Button primary on:click={filter}>Filter</Button>
 	</div>
 
 	{#each clusters as clstr (clstr.id)}
