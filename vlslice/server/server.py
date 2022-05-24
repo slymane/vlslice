@@ -6,8 +6,9 @@ import sys
 from sklearnex import patch_sklearn
 patch_sklearn()
 
-from flask import Flask, send_from_directory, request
+from flask import Flask, g, request, send_file, send_from_directory, jsonify
 import numpy as np
+import pandas as pd
 from scipy import stats
 import sklearn
 from sklearn import cluster
@@ -15,7 +16,7 @@ import tables
 import yaml
 
 from model import load_model, clip_sim, delta_c
-from utils import img2b64, img2html, cart
+from utils import img2b64, cart
 
 
 # CMD ARGUMENTS
@@ -32,8 +33,8 @@ print(cfg)
 app = Flask(__name__)
 app.config.from_object(cfg['flask'])
 
-# GLOBAL SESSION INFO
-gsession = {
+# SERVER CONTEXT
+gserv = {
     'data': {},
     'model': None
 }
@@ -45,7 +46,7 @@ def setup():
     # Load data
     h5file = tables.open_file('/nfs/hpc/sw_data/slymane/openimages_64x64.h5')
     filt = ~np.isin(h5file.root.labels, np.char.encode(cfg['data']['exclude_classes']))
-    gsession['data'] = {
+    gserv['data'] = {
         'h5file': h5file,
         'imgs': h5file.root.images,
         'imgs_idx': np.where(filt)[0],
@@ -53,12 +54,12 @@ def setup():
     }
 
     # Load model
-    gsession['model'] = load_model(**cfg['model'])
+    gserv['model'] = load_model(**cfg['model'])
 
 
 def shutdown(sig=None, frame=None):
-    if 'h5file' in gsession['data']:
-        gsession['data']['h5file'].close()
+    if 'h5file' in gserv['data']:
+        gserv['data']['h5file'].close()
 
     print('Shutting down server...')
     sys.exit(0)
@@ -68,8 +69,48 @@ signal.signal(signal.SIGINT, shutdown)  # NOQA: E305
 # Display a random number
 @app.route('/filter', methods=['POST'])
 def filter():
-    print(request.json)
-    return {'mykey': "hello world!"}
+    # Parse request
+    baseline = request.json['baseline']  # Basleline text caption
+    augment = request.json['augment']    # Augmented text caption
+    k = request.json['k']                # Topk results to filter
+    w = request.json['w']                # Distance/DC cluster weight
+    dt = request.json['dt']              # Clustering distance threshold
+
+    # Embed text captions
+    txt_embs = gserv['model'](txt=[baseline, augment])
+    sims = clip_sim(txt_embs, gserv['data']['imgs_emb'])
+
+    # Filter data by captions
+    g.topk = np.argsort(sims[:, 0])[-k:]
+    g.topkidxs = gserv['data']['imgs_idx'][g.topk]
+    g.topkembs = gserv['data']['imgs_emb'][g.topk]
+    g.topksims = sims[g.topk]
+    g.topkdc = delta_c(g.topksims)
+
+    # Get distances
+    dist_embs = (1 - np.matmul(g.topkembs, g.topkembs.transpose())).clip(0.0, 1.0)
+    dist_dc = sklearn.metrics.pairwise.euclidean_distances((g.topkdc.reshape(-1, 1) + 1) / 2)
+    dist = w * dist_embs + (1 - w) * dist_dc
+
+    # Cluster
+    clusterer = cluster.AgglomerativeClustering(
+        n_clusters=None,
+        affinity='precomputed',
+        linkage='average',
+        distance_threshold=dt,
+        memory='cache/'
+    ).fit(dist)
+    clusters = np.char.mod('%i', clusterer.labels_).astype('U128')
+
+    # Build dataframe for cluster-level dc metrics
+    dcs = {c: g.topkdc[clusters == c] for c in np.unique(clusters)}
+    data = [[c, d.mean(), d.var().clip(min=0.0), len(d)] for c, d in dcs.items()]
+    g.df = pd.DataFrame(data, columns=['id', 'mean', 'var', 'count'])
+
+    return jsonify([{
+        'id': str(i),
+        'b64': img2b64(i, gserv['data']['imgs'])
+    } for i in g.topkidxs])
 
 
 # Path for main Svelte page
