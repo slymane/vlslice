@@ -1,6 +1,7 @@
 vlslice/client/node_modules/
 vlslice/client/public/build/
 vlslice/server/flask_session/
+vlslice/server/cache
 .DS_Store
 .vscode
 __pycache__

@@ -9,6 +9,7 @@ dependencies:
   - flake8=4.0
   - flask=2.1
   - numpy=1.22
+  - pandas=1.4
   - pillow=9.0
   - pytables=3.7
   - python=3.10
