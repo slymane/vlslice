@@ -2,11 +2,10 @@ import argparse
 import os
 import signal
 import sys
-
 from sklearnex import patch_sklearn
 patch_sklearn()
 
-from flask import Flask, g, request, send_file, send_from_directory, jsonify
+from flask import Flask, g, request, send_from_directory, jsonify
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -103,15 +102,30 @@ def filter():
     clusters = np.char.mod('%i', clusterer.labels_).astype('U128')
 
     # Build dataframe for cluster-level dc metrics
-    dcs = {c: g.topkdc[clusters == c] for c in np.unique(clusters)}
-    data = [[c, d.mean(), d.var().clip(min=0.0), len(d)] for c, d in dcs.items()]
-    g.df = pd.DataFrame(data, columns=['id', 'mean', 'var', 'count'])
+    pd_data = []
+    json_data = []
+    for c in np.unique(clusters):
+        dc = g.topkdc[clusters == c]
+        c_mean = dc.mean()
+        c_var = dc.var().clip(min=0.0)
 
-    return jsonify([{
-        'id': str(i),
-        'b64': img2b64(i, gserv['data']['imgs'])
-    } for i in g.topkidxs])
+        pd_data.append([c, c_mean, c_var, len(dc)])
 
+        json_data.append({
+            'id': c.item(),
+            'mean': c_mean.item(),
+            'var': c_var.item(),
+            'count': len(dc),
+            'images': [{
+                'id': i.item(),
+                'b64': img2b64(i, gserv['data']['imgs'])
+            } for i in g.topkidxs[clusters == c]]
+        })
+
+        json_data.sort(key=lambda x: x['count'], reverse=True)
+
+    g.df = pd.DataFrame(pd_data, columns=['id', 'mean', 'var', 'count'])
+    return jsonify(json_data)
 
 # Path for main Svelte page
 @app.route('/')
