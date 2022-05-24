@@ -1,18 +1,28 @@
 <script>
 	import { onMount } from 'svelte';
 
-	function getRand() {
-	  fetch("./rand")
-		.then(d => d.text())
-		.then(d => (rand = d));
+	function filter(baseline, augment) {
+		console.log("Running Post")
+		fetch('./filter', {
+			method: 'POST',
+			headers: {'Content-Type': 'Application/json'},
+			body: JSON.stringify({
+				baseline: 'A photo of a person',
+				augment: 'A photo of a ceo'
+			})
+		})
+		.then(r => (r.json()))
+		.then(function(data) {
+			console.log(data)
+		});
 	}
-	let rand;
-	getRand();
+
+	let rand = "";
   </script>
 
 <main>
 	<h1>Your number is {rand}!</h1>
-	<button on:click={getRand}>Increment</button>
+	<button on:click={filter}>Filter</button>
 </main>
 
 <style>

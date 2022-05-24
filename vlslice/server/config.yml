@@ -2,7 +2,6 @@ flask:
   session_permanent: True
   session_type: filesystem
 data:
-  start: 42
   exclude_classes:
     - Human eye
     - Human skull
@@ -20,3 +19,6 @@ data:
     - Human body
     - Tire
     - Wheel
+model:
+  version: openai/clip-vit-base-patch32
+  device: cpu
