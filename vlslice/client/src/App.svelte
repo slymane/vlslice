@@ -48,7 +48,7 @@
 				let cMax = Math.max(...clusters.map(c => c.count));
 
 				let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
-				let range = [0, 0.70 * cw]
+				let range = [0, 0.65 * cw]
 				scaleMean = scaleMean.range(range);
 				scaleVar = scaleVar.domain([0, vMax]).range(range);
 				scaleSize = scaleSize.domain([0, cMax]).range(range);
@@ -114,42 +114,41 @@
 	{#each clusters as clstr (clstr.id)}
 		<div class="cluster w-full grid grid-cols-4">
 			<!-- Summary -->
-			<div class="cluster-summary col-span-1" bind>
+			<div class="cluster-summary col-span-1">
 
 				<!-- Bars -->
-				<div id="summary-{clstr.id}" class="grid grid-rows-3 grid-cols-5 gap-x-4">
-					<div class="text-right">Mean</div>
-					<div class="col-span-4 summary-bar">
-						<svg width="100%" height="20">
-							<rect y="5" width="{scaleMean(Math.abs(clstr.mean))}" height="10" 
-								fill={clstr.mean > 0 ? "hsl(var(--su))" : "hsl(var(--er))"}
-							/>
-							<text dominant-baseline="middle" x="{scaleMean(Math.abs(clstr.mean)) + 5}" y="50%" fill="lightgray">
-								({clstr.mean > 0 ? '+' : ''}{clstr.mean.toFixed(2)})
-							</text>
-						</svg>
-					</div>
+				<svg id="summary-{clstr.id}" width="100%" height="60">
+					<g transform="translate(0, 0)">
+						<text x="60" y="10" dominant-baseline="middle" text-anchor="end" fill="hsl(var(--bc))">
+							Mean
+						</text>
+						<rect x="65" y="5" width="{scaleMean(Math.abs(clstr.mean))}" height="10" 
+							fill={clstr.mean > 0 ? "hsl(var(--su))" : "hsl(var(--er))"}/>
+						<text x="{70 + scaleMean(Math.abs(clstr.mean))}" y="50%" dominant-baseline="middle" fill="hsl(var(--b3))">
+							({clstr.mean > 0 ? '+' : ''}{clstr.mean.toFixed(2)})
+						</text>
+					</g>
 
-					<div class="text-right">Variance</div>
-					<div class="col-span-4 summary-bar">
-						<svg width="100%" height="20">
-							<rect y="5" width="{scaleVar(clstr.var)}" height="10"/>
-							<text dominant-baseline="middle" x="{scaleVar(clstr.var) + 5}" y="50%" fill="lightgray">
-								({clstr.var.toFixed(2)})
-							</text>
-						</svg>
-					</div>
+					<g transform="translate(0, 20)">
+						<text x="60" y="10" dominant-baseline="middle" text-anchor="end" fill="hsl(var(--bc))">
+							Variance
+						</text>
+						<rect x="65" y="5" width="{scaleVar(clstr.var)}" height="10"/>
+						<text x="{70 + scaleVar(Math.abs(clstr.var))}" y="50%" dominant-baseline="middle" fill="hsl(var(--b3))">
+							({clstr.var.toFixed(2)})
+						</text>
+					</g>
 
-					<div class="text-right">Size</div>
-					<div class="col-span-4 summary-bar">
-						<svg width="100%" height="20">
-							<rect y="5" width="{scaleSize(clstr.count)}px" height="10"/>
-							<text dominant-baseline="middle" x="{scaleSize(clstr.count) + 5}px" y="50%" fill="lightgray">
-								({clstr.count})
-							</text>
-						</svg>
-					</div>
-				</div>
+					<g transform="translate(0, 40)">
+						<text x="60" y="10" dominant-baseline="middle" text-anchor="end" fill="hsl(var(--bc))">
+							Size
+						</text>
+						<rect x="65" y="5" width="{scaleSize(clstr.count)}" height="10"/>
+						<text x="{70 + scaleSize(clstr.count)}" y="50%" dominant-baseline="middle" fill="hsl(var(--b3))">
+							({clstr.count})
+						</text>
+					</g>
+				</svg>
 
 				<!-- Selector Buttons -->
 				<div>
@@ -176,12 +175,6 @@
 		display: flex;
 		flex-direction: column;
 	}
-
-	.summary-bar {
-		display: flex;
-		align-items: center;
-	}
-
 	.cluster-images {
 		display: flex;
 		flex-wrap: wrap;
