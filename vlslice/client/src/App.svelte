@@ -48,7 +48,7 @@
 				let cMax = Math.max(...clusters.map(c => c.count));
 
 				let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
-				let range = [0, 0.65 * cw]
+				let range = [0, cw - 115];
 				scaleMean = scaleMean.range(range);
 				scaleVar = scaleVar.domain([0, vMax]).range(range);
 				scaleSize = scaleSize.domain([0, cMax]).range(range);
@@ -112,41 +112,39 @@
 
 	<!-- CLUSTER DISPLAY -->
 	{#each clusters as clstr (clstr.id)}
-		<div class="cluster w-full grid grid-cols-4">
+		<div class="cluster w-full grid grid-cols-8">
 			<!-- Summary -->
-			<div class="cluster-summary col-span-1">
+			<div class="cluster-summary">
 
 				<!-- Bars -->
 				<svg id="summary-{clstr.id}" width="100%" height="60">
+
+					<!-- Cluster mean -->
 					<g transform="translate(0, 0)">
 						<text x="60" y="10" dominant-baseline="middle" text-anchor="end" fill="hsl(var(--bc))">
-							Mean
-						</text>
+							Mean</text>
 						<rect x="65" y="5" width="{scaleMean(Math.abs(clstr.mean))}" height="10" 
 							fill={clstr.mean > 0 ? "hsl(var(--su))" : "hsl(var(--er))"}/>
-						<text x="{70 + scaleMean(Math.abs(clstr.mean))}" y="50%" dominant-baseline="middle" fill="hsl(var(--b3))">
-							({clstr.mean > 0 ? '+' : ''}{clstr.mean.toFixed(2)})
-						</text>
+						<text x="{70 + scaleMean(Math.abs(clstr.mean))}" y="10" dominant-baseline="middle" 
+							fill="hsl(var(--b3))">({clstr.mean > 0 ? '+' : ''}{clstr.mean.toFixed(2)})</text>
 					</g>
 
+					<!-- Cluster variance -->
 					<g transform="translate(0, 20)">
 						<text x="60" y="10" dominant-baseline="middle" text-anchor="end" fill="hsl(var(--bc))">
-							Variance
-						</text>
+							Variance</text>
 						<rect x="65" y="5" width="{scaleVar(clstr.var)}" height="10"/>
-						<text x="{70 + scaleVar(Math.abs(clstr.var))}" y="50%" dominant-baseline="middle" fill="hsl(var(--b3))">
-							({clstr.var.toFixed(2)})
-						</text>
+						<text x="{70 + scaleVar(clstr.var)}" y="10" dominant-baseline="middle" 
+							fill="hsl(var(--b3))">({clstr.var.toFixed(2)})</text>
 					</g>
 
+					<!-- Cluster size -->
 					<g transform="translate(0, 40)">
 						<text x="60" y="10" dominant-baseline="middle" text-anchor="end" fill="hsl(var(--bc))">
-							Size
-						</text>
+							Size</text>
 						<rect x="65" y="5" width="{scaleSize(clstr.count)}" height="10"/>
-						<text x="{70 + scaleSize(clstr.count)}" y="50%" dominant-baseline="middle" fill="hsl(var(--b3))">
-							({clstr.count})
-						</text>
+						<text x="{70 + scaleSize(clstr.count)}" y="10" dominant-baseline="middle" 
+							fill="hsl(var(--b3))">({clstr.count})</text>
 					</g>
 				</svg>
 
@@ -157,11 +155,16 @@
 			</div>
 
 			<!-- Images -->
-			<div class="cluster-images col-span-3 gap-px" id="cluster-{clstr.id}">
+			<div class="cluster-images col-span-6 gap-px" id="cluster-{clstr.id}">
 				{#each clstr.images as img (img.id)}
 					<img id="img-{img.id}" class="m-1 p-0" alt="Filtered dataset sample" on:click="{() => console.log(img.id)}"  
 						src="data:image/png;base64,{img.b64}" width="128" height="128"/>
 				{/each}
+			</div>
+
+			<!-- Drop Downs -->
+			<div>
+				TODO
 			</div>
 		</div>
 
