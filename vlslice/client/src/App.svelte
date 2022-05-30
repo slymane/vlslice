@@ -1,4 +1,6 @@
 <script>
+	import { slide } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 	import * as d3 from "d3";
 
 	// Filtering Variables
@@ -39,6 +41,11 @@
 			.then(function(jsonData) {
 				console.log('Asigning new clusters...')
 				clusters = jsonData;
+				for (let i = 0; i < clusters.length; i++) {
+					clusters[i].showMore = false;
+					clusters[i].showSimilar = false;
+					clusters[i].showCounter = false;
+				}
 				console.log(clusters);
 			}).then(function() {
 				console.log('Scaling to new clusters...')
@@ -60,6 +67,21 @@
 			console.log('Null values...')
 			enableFilter = true;
 		}
+	}
+
+	function showMore(clstr, enable) {
+		clstr.showMore = enable;
+		clusters = clusters;
+	}
+
+	function showSimilar(clstr, enable) {
+		clstr.showSimilar = enable;
+		clusters = clusters;
+	}
+
+	function showCounter(clstr, enable) {
+		clstr.showCounter = enable;
+		clusters = clusters;
 	}
   </script>
 
@@ -104,17 +126,17 @@
 
 		<!-- Submit -->
 		<div>
-			<progress class:hidden="{enableFilter}" class="progress"></progress>
-			<button class="btn" disabled="{enableFilter ? null : 'disabled'}" type="submit" on:click={filter}>Filter</button>
+			<button class="btn" class:loading="{!enableFilter}" disabled="{enableFilter ? null : 'disabled'}" 
+				type="submit" on:click={filter}>Filter</button>
 		</div>
 	</div>
 	<br>
 
 	<!-- CLUSTER DISPLAY -->
 	{#each clusters as clstr (clstr.id)}
-		<div class="cluster w-full grid grid-cols-8">
+		<div class="cluster w-full grid grid-cols-8 mb-24">
 			<!-- Summary -->
-			<div class="cluster-summary">
+			<div class="col-span-2 cluster-summary">
 
 				<!-- Bars -->
 				<svg id="summary-{clstr.id}" width="100%" height="60">
@@ -149,22 +171,49 @@
 				</svg>
 
 				<!-- Selector Buttons -->
-				<div>
-					TODO
+				<div class="flex flex-wrap justify-center">
+					<button class="btn btn-xs w-1/3 mx-2 my-1">Add to List</button>
+					<button class="btn btn-xs w-1/3 mx-2 my-1">Add to Last</button>
+					<button class="btn btn-xs btn-outline btn-success w-1/3 mx-2 my-1">Select All</button>
+					<button class="btn btn-xs btn-outline btn-error w-1/3 mx-2 my-1">Deselect All</button>
 				</div>
 			</div>
 
 			<!-- Images -->
-			<div class="cluster-images col-span-6 gap-px" id="cluster-{clstr.id}">
-				{#each clstr.images as img (img.id)}
-					<img id="img-{img.id}" class="m-1 p-0" alt="Filtered dataset sample" on:click="{() => console.log(img.id)}"  
-						src="data:image/png;base64,{img.b64}" width="128" height="128"/>
-				{/each}
+			<div class="col-span-5" id="cluster-{clstr.id}">
+				<div class="grid grid-cols-12 gap-px mb-px">
+					{#each clstr.images.slice(0, 12) as img (img.id)}
+						<img id="img-{img.id}" alt="Filtered dataset sample" on:click="{() => console.log(img.id)}"  
+							src="data:image/png;base64,{img.b64}" width="128" height="128"/>
+					{/each}
+				</div>
+
+				{#if clstr.showMore}
+					<div class="grid grid-cols-12 gap-px" transition:slide>
+						{#each clstr.images.slice(13, clstr.images.length) as img (img.id)}
+							<img id="img-{img.id}" alt="Filtered dataset sample" on:click="{() => console.log(img.id)}"  
+								src="data:image/png;base64,{img.b64}" width="128" height="128"/>
+						{/each}
+					</div>
+				{/if}
 			</div>
 
 			<!-- Drop Downs -->
-			<div>
-				TODO
+			<div class="form-control justify-start">
+				<label class="label cursor-pointer justify-start">
+					<input type="checkbox" class="toggle mr-1" bind:checked={clstr.showMore} 
+						disabled={clstr.images.length <= 12}/>
+					<span class="label-text" class:disable-span="{clstr.images.length <= 12 ? 'hsl(var(--b3))' : ''}">
+						Show More</span> 
+				</label>
+				<label disabled class="label cursor-pointer justify-start">
+					<input type="checkbox" class="toggle mr-1" bind:checked={clstr.showSimilar} />
+					<span class="label-text">Show Similar</span> 
+				</label>
+				<label class="label cursor-pointer justify-start">
+					<input type="checkbox" class="toggle mr-1" bind:checked={clstr.showCounter} />
+					<span class="label-text">Show Counterfactual</span> 
+				</label>
 			</div>
 		</div>
 
@@ -178,10 +227,10 @@
 		display: flex;
 		flex-direction: column;
 	}
-	.cluster-images {
-		display: flex;
-		flex-wrap: wrap;
-		border: 1px solid black;
+
+	.disable-span {
+		color: hsl(var(--b3));
+		cursor: not-allowed;
 	}
 
 	#controls {
