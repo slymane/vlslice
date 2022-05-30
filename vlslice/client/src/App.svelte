@@ -126,8 +126,10 @@
 
 		<!-- Submit -->
 		<div>
-			<button class="btn" class:loading="{!enableFilter}" disabled="{enableFilter ? null : 'disabled'}" 
-				type="submit" on:click={filter}>Filter</button>
+			<button class="btn" disabled="{enableFilter ? null : 'disabled'}" type="submit" on:click={filter}>
+				Filter
+				<i class="fa-solid fa-cog m-1" class:fa-spin={!enableFilter}></i>
+			</button>
 		</div>
 	</div>
 	<br>
