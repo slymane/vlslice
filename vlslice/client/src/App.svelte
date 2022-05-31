@@ -8,6 +8,8 @@
 	let fltrAugment = null;
 	let fltrK = null;
 	let enableFilter = true;
+	let sortReverse = true;
+	let sortKey = 'mean';
 
 	// Cluster Summary
 	let scaleMean = d3.scaleLinear().domain([0, 1]);
@@ -41,6 +43,7 @@
 			.then(function(jsonData) {
 				console.log('Asigning new clusters...')
 				clusters = jsonData;
+				sort()
 				for (let i = 0; i < clusters.length; i++) {
 					clusters[i].showMore = false;
 					clusters[i].showSimilar = false;
@@ -69,11 +72,6 @@
 		}
 	}
 
-	function showMore(clstr, enable) {
-		clstr.showMore = enable;
-		clusters = clusters;
-	}
-
 	function showSimilar(clstr, enable) {
 		clstr.showSimilar = enable;
 		clusters = clusters;
@@ -82,6 +80,20 @@
 	function showCounter(clstr, enable) {
 		clstr.showCounter = enable;
 		clusters = clusters;
+	}
+
+	function sort() {
+		let sorted = clusters.sort(function(a, b) {
+			let x = a[sortKey];
+			let y = b[sortKey];
+			return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+		});
+		clusters = sortReverse ? sorted.reverse() : sorted;
+	}
+
+	function reverseSort() {
+		sortReverse = !sortReverse;
+		clusters = clusters.reverse();
 	}
   </script>
 
@@ -115,21 +127,39 @@
 				type="text" placeholder="A photo of a ceo" bind:value={fltrAugment}/>
 		</div>
 
-		<!-- TopK to Return -->
-		<div class="w-auto max-w-xs">
+		<!-- Filter to TopK -->
+		<div class="w-full w-auto max-w-xs">
 			<label class="label" for="filter-topk" >
 				<span class="label-text">TopK</span>
 			</label>
-			<input id="filter-topk" class="input input-bordered w-full" 
-				type="number" placeholder="1000" bind:value={fltrK}/>
+			<div id="filter-topk" class="input-group">
+				<input class="input input-bordered w-full" type="number" placeholder="1000" bind:value={fltrK}/>
+				<button class="btn" disabled="{enableFilter ? null : 'disabled'}" type="submit" on:click={filter}>
+					Filter
+					<i class="fa-solid fa-cog ml-1" class:fa-spin={!enableFilter}></i>
+				</button>
+			</div>
 		</div>
 
-		<!-- Submit -->
-		<div>
-			<button class="btn" disabled="{enableFilter ? null : 'disabled'}" type="submit" on:click={filter}>
-				Filter
-				<i class="fa-solid fa-cog m-1" class:fa-spin={!enableFilter}></i>
-			</button>
+		<!-- Sorting -->
+		<div class="w-full max-w-xs">
+			<label class="label" for="sort" >
+				<span class="label-text">Sort Clusters By...</span>
+			</label>
+			<div id="sort" class="input-group">
+				<select class="select select-bordered" bind:value={sortKey} on:change={sort}>
+					<option value="mean" selected>DC Mean</option>
+					<option value="var">DC Variance</option>
+					<option value="count">Size</option>
+				</select>
+				<button class="btn" on:click={reverseSort}>
+					{#if sortReverse}
+						<i class="fa-solid fa-arrow-down"></i>
+					{:else}
+						<i class="fa-solid fa-arrow-up"></i>
+					{/if}
+				</button>
+			</div>
 		</div>
 	</div>
 	<br>
