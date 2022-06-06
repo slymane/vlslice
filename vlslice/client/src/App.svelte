@@ -1,7 +1,10 @@
 <script>
 	import { slide } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
+	import { onMount } from 'svelte';
 	import * as d3 from "d3";
+
+	// Vars to make Eric's life easier
+	const DEV = true;
 
 	// Filtering Variables
 	let fltrBaseline = null;
@@ -10,8 +13,11 @@
 	let enableFilter = true;
 	let sortReverse = true;
 	let sortKey = 'mean';
+	let fltrBounds = {'mean': null, 'var': null, 'size': null};
 
 	// Cluster Summary
+	const fields = ['mean', 'size', 'var'];
+	const fieldsLong = {'mean': 'mean', 'size': 'size', 'var': 'variance'};
 	let scaleMean = d3.scaleLinear().domain([0, 1]);
 	let scaleSize = d3.scaleLinear();
 	let scaleVar = d3.scaleLinear();
@@ -19,6 +25,80 @@
 	// Image store
 	let clusters = [];
 	$: userClusters = clusters.filter((c) => c.userList);
+	$: filteredClusters = clusters.filter((c) => 
+		   (!fltrBounds['mean'] || (fltrBounds['mean'][0] <= c.mean && c.mean <= fltrBounds['mean'][1])) 
+		&& (!fltrBounds['var']  || (fltrBounds['var'][0]  <= c.var  && c.var  <= fltrBounds['var'][1]))
+		&& (!fltrBounds['size'] || (fltrBounds['size'][0] <= c.size && c.size <= fltrBounds['size'][1]))
+	);
+
+	onMount(async () => {
+		// Run a default query if developing
+		if (DEV) {
+			fltrBaseline = 'A photo of a person';
+			fltrAugment = 'A photo of a CEO';
+			fltrK = 100;
+			filter();
+		}
+	});
+
+	function createFilters() {
+		fltrBounds = {'mean': null, 'var': null, 'size': null};
+		fields.forEach(f => {
+			const spec = {
+				$schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+				description: `Histogram for ${f}`,
+				data: {values: clusters},
+				params: [{
+						name: "select",
+						select: {type: "interval", encoding: ["x"]}
+					}],
+				mark: {
+					type: 'bar',
+					fill: cssToHSL('--n'),
+					stroke: cssToHSL('--s')
+				},
+				encoding: {
+					x: {
+						title : fieldsLong[f],
+						bin: {maxbins: 50},
+						field: f,
+					},
+					y: {
+						title: 'count',
+						aggregate: 'count',
+						scale: {type: f == 'mean' ? 'linear' : 'symlog'}
+					},
+					strokeWidth: {
+						condition: [
+							{
+								param: "select",
+								empty: false,
+								value: 1
+							}
+
+						],
+						value: 0
+					}
+				}
+			};
+			vegaEmbed(`#filter-${f}`, spec, {"actions": false}).then(function(result) {
+				result.view.addSignalListener('select', function(signalName, e) {
+					if (f in e) {
+						fltrBounds[f] = e[f];
+					} else {
+						fltrBounds[f] = null;
+					}
+					console.log(signalName + " " + e);
+					console.log(e);
+				})
+			});
+		});
+	}
+
+	function cssToHSL(varId) {
+		let hsl = getComputedStyle(document.querySelector(':root')).getPropertyValue(varId);
+		return `hsl(${hsl})`;
+	}
 
 	function filter() {
 		if (fltrBaseline != null && fltrAugment != null && fltrK != null) {
@@ -26,7 +106,6 @@
 
 			// Disable filtering and clear clusters
 			enableFilter = false;
-			clusters = [];
 
 			// Fetch new clustering from the server
 			fetch('./filter', {
@@ -42,7 +121,7 @@
 			})
 			.then(r => (r.json()))
 			.then(function(jsonData) {
-				console.log('Asigning new clusters...')
+				console.log('Assigning new clusters...')
 				clusters = jsonData;
 				sort()
 				for (let i = 0; i < clusters.length; i++) {
@@ -57,7 +136,7 @@
 
 				// Setup scaling for summary bars
 				let vMax = Math.max(...clusters.map(c => c.var));
-				let cMax = Math.max(...clusters.map(c => c.count));
+				let cMax = Math.max(...clusters.map(c => c.size));
 
 				let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
 				let range = [0, cw - 115];
@@ -66,10 +145,12 @@
 				scaleSize = scaleSize.domain([0, cMax]).range(range);
 
 				// Re-enable the filter
+				createFilters();
 				enableFilter = true;
 			});
 		} else {
 			console.log('Null values...')
+			createFilters();
 			enableFilter = true;
 		}
 	}
@@ -85,17 +166,21 @@
 	}
 
 	function sort() {
-		let sorted = clusters.sort(function(a, b) {
+		clusters.sort(function(a, b) {
 			let x = a[sortKey];
 			let y = b[sortKey];
 			return ((x < y) ? -1 : ((x > y) ? 1 : 0));
 		});
-		clusters = sortReverse ? sorted.reverse() : sorted;
+		if (sortReverse) {
+			clusters.reverse();
+		}
+		clusters = clusters;
 	}
 
 	function reverseSort() {
 		sortReverse = !sortReverse;
-		clusters = clusters.reverse();
+		clusters.reverse();
+		clusters = clusters;
 	}
   </script>
 
@@ -152,7 +237,7 @@
 				<select class="select select-bordered" bind:value={sortKey} on:change={sort}>
 					<option value="mean" selected>DC Mean</option>
 					<option value="var">DC Variance</option>
-					<option value="count">Size</option>
+					<option value="size">Size</option>
 				</select>
 				<button class="btn" on:click={reverseSort}>
 					{#if sortReverse}
@@ -165,6 +250,10 @@
 		</div>
 	</div>
 	<br>
+
+	<div id="filter-mean"></div>
+	<div id="filter-var"></div>
+	<div id="filter-size"></div>
 
 	<!-- USER CLUSTER DISPLAY -->
 	<div class="collapse">
@@ -186,13 +275,13 @@
 		<input type="checkbox"/> 
 		<div class="collapse-title text-2xl font-medium">
 			<div class="indicator" on:click="{(e) => e.target.parentElement.previousElementSibling.click()}">
-				<span class="indicator-item badge badge-primary">{clusters.length}</span> 
+				<span class="indicator-item badge badge-primary">{filteredClusters.length}</span> 
 				Clusters
 			</div>
 			<div class="divider"></div>
 		</div>
 		<div class="collapse-content"> 
-		{#each clusters as clstr (clstr.id)}
+		{#each filteredClusters as clstr (clstr.id)}
 			<div class="cluster w-full grid grid-cols-8 mb-24">
 				<!-- Summary -->
 				<div class="col-span-2 cluster-summary">
@@ -214,7 +303,7 @@
 						<g transform="translate(0, 20)">
 							<text x="60" y="10" dominant-baseline="middle" text-anchor="end" fill="hsl(var(--bc))">
 								Variance</text>
-							<rect x="65" y="5" width="{scaleVar(clstr.var)}" height="10"/>
+							<rect x="65" y="5" fill="hsl(var(--n))" width="{scaleVar(clstr.var)}" height="10"/>
 							<text x="{70 + scaleVar(clstr.var)}" y="10" dominant-baseline="middle" 
 								fill="hsl(var(--b3))">({clstr.var.toFixed(2)})</text>
 						</g>
@@ -223,11 +312,12 @@
 						<g transform="translate(0, 40)">
 							<text x="60" y="10" dominant-baseline="middle" text-anchor="end" fill="hsl(var(--bc))">
 								Size</text>
-							<rect x="65" y="5" width="{scaleSize(clstr.count)}" height="10"/>
-							<text x="{70 + scaleSize(clstr.count)}" y="10" dominant-baseline="middle" 
-								fill="hsl(var(--b3))">({clstr.count})</text>
+							<rect x="65" y="5" fill="hsl(var(--n))" width="{scaleSize(clstr.size)}" height="10"/>
+							<text x="{70 + scaleSize(clstr.size)}" y="10" dominant-baseline="middle" 
+								fill="hsl(var(--b3))">({clstr.size})</text>
 						</g>
 					</svg>
+					
 
 					<!-- Selector Buttons -->
 					<div class="flex flex-wrap justify-center">

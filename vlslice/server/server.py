@@ -114,16 +114,14 @@ def filter():
             'id': c.item(),
             'mean': c_mean.item(),
             'var': c_var.item(),
-            'count': len(dc),
+            'size': len(dc),
             'images': [{
                 'id': i.item(),
                 'b64': img2b64(i, gserv['data']['imgs'])
             } for i in g.topkidxs[clusters == c]]
         })
 
-        json_data.sort(key=lambda x: x['count'], reverse=True)
-
-    g.df = pd.DataFrame(pd_data, columns=['id', 'mean', 'var', 'count'])
+    g.df = pd.DataFrame(pd_data, columns=['id', 'mean', 'var', 'size'])
     return jsonify(json_data)
 
 
