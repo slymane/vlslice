@@ -2757,6 +2757,9 @@ body[dir="rtl"] .checkbox:checked,
 .col-span-5 {
   grid-column: span 5 / span 5;
 }
+.m-0 {
+  margin: 0px;
+}
 .mx-2 {
   margin-left: 0.5rem;
   margin-right: 0.5rem;
@@ -2768,8 +2771,8 @@ body[dir="rtl"] .checkbox:checked,
 .ml-1 {
   margin-left: 0.25rem;
 }
-.mb-24 {
-  margin-bottom: 6rem;
+.mb-20 {
+  margin-bottom: 5rem;
 }
 .mb-px {
   margin-bottom: 1px;

@@ -113,11 +113,12 @@ def filter():
         json_data.append({
             'id': c.item(),
             'mean': c_mean.item(),
-            'var': c_var.item(),
+            'variance': c_var.item(),
             'size': len(dc),
             'images': [{
                 'id': i.item(),
-                'b64': img2b64(i, gserv['data']['imgs'])
+                'b64': img2b64(i, gserv['data']['imgs']),
+                'selected': False
             } for i in g.topkidxs[clusters == c]]
         })
 

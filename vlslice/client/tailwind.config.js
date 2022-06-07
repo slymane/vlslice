@@ -18,7 +18,7 @@ module.exports = {
     darkTheme: "dark",
   },
   content: [
-    "./src/App.svelte",
+    "./src/**/*.svelte"
   ],
   theme: {
     extend: {},
