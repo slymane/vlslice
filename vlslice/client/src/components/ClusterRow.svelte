@@ -10,6 +10,20 @@
     export let scaleMean;
     export let scaleVariance;
     export let scaleSize;
+
+    function selectAll() {
+        for (let i = 0; i < cluster.images.length; i++) {
+            cluster.images[i].selected = true;
+        }
+    }
+
+    function unselectAll() {
+        for (let i = 0; i < cluster.images.length; i++) {
+            cluster.images[i].selected = false;
+        }
+    }
+
+    $: toAdd = cluster.images.filter(i => i.selected).length;
 </script>
 
 <div class="grid grid-cols-8 mb-20">
@@ -21,24 +35,24 @@
 
         <!-- Selector Buttons -->
         <div class="flex flex-wrap justify-center">
-            <button class="btn btn-xs w-1/3 mx-2 my-1" on:click="{() => cluster.userList = true}">Add to List</button>
+            <button class="btn btn-xs w-1/3 mx-2 my-1" on:click="{() => cluster.userList = true}">Add to List ({toAdd})</button>
             <button class="btn btn-xs w-1/3 mx-2 my-1" on:click="{() => cluster.userList = false}">Add to Last</button>
-            <button class="btn btn-xs btn-outline btn-success w-1/3 mx-2 my-1">Select All</button>
-            <button class="btn btn-xs btn-outline btn-error w-1/3 mx-2 my-1">Deselect All</button>
+            <button class="btn btn-xs btn-outline btn-success w-1/3 mx-2 my-1" on:click={selectAll}>Select All</button>
+            <button class="btn btn-xs btn-outline btn-error w-1/3 mx-2 my-1" on:click={unselectAll}>Unselect All</button>
         </div>
     </div>
 
     <!-- Images -->
     <div class="col-span-5">
-        <div class="grid grid-cols-12 gap-px mb-px">
+        <div class="grid grid-cols-12 gap-0.5 mb-px">
             {#each cluster.images.slice(0, imgsNPreview) as img (img.id)}
                 <ImgB64 id={img.id} b64={img.b64} bind:selected={img.selected} size={imgDispSize}/>
             {/each}
         </div>
 
         {#if cluster.showMore}
-            <div class="grid grid-cols-12 gap-px" transition:slide>
-                {#each cluster.images.slice(imgsNPreview + 1, cluster.images.length) as img (img.id)}
+            <div class="grid grid-cols-12 gap-0.5" transition:slide>
+                {#each cluster.images.slice(imgsNPreview, cluster.images.length) as img (img.id)}
                     <ImgB64 class="m-0" id={img.id} b64={img.b64} bind:selected={img.selected} size={imgDispSize}/>
                 {/each}
             </div>

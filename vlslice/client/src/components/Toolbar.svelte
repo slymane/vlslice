@@ -3,7 +3,7 @@
     import { createEventDispatcher } from 'svelte';
 
     // Variables to make Eric's life easier
-	const DEV = true;
+	const DEV = false;
     const dispatch = createEventDispatcher();
 
     export let enableFilter;
@@ -16,8 +16,8 @@
 	onMount(async () => {
 		// Run a default query if developing
 		if (DEV) {
-			baseline = 'A photo of a person';
-			augment = 'A photo of a CEO';
+			baseline = 'car';
+			augment = 'fast car';
 			topk = 100;
 			filter();
 		}

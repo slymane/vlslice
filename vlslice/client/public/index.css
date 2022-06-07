@@ -2822,8 +2822,11 @@ body[dir="rtl"] .checkbox:checked,
 .justify-center {
   justify-content: center;
 }
-.gap-px {
-  gap: 1px;
+.gap-0\.5 {
+  gap: 0.125rem;
+}
+.gap-0 {
+  gap: 0px;
 }
 .bg-neutral {
   --tw-bg-opacity: 1;
@@ -2849,6 +2852,9 @@ body[dir="rtl"] .checkbox:checked,
 .text-neutral-content {
   --tw-text-opacity: 1;
   color: hsl(var(--nc) / var(--tw-text-opacity));
+}
+.outline {
+  outline-style: solid;
 }
 .filter {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
