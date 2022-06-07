@@ -3,6 +3,7 @@
 	import HistogramFilter from './components/HistogramFilter.svelte';
     import ClusterRow from './components/ClusterRow.svelte';
 	import Toolbar from './components/Toolbar.svelte';
+	import Section from './components/Section.svelte';
 	import { clusterStore } from './store.js';
 
 	// Filtering variables
@@ -14,8 +15,9 @@
 	let scaleSize = d3.scaleLinear();
 	let scaleVariance = d3.scaleLinear();
 
-	// Reactivly set store for clusters for easy access in components
+	// Clusters and cluster metadata
 	let clusters = [];
+	let nClustersDisplayed = null;
 
 	function filter(e) {
 		enableFilter = false;
@@ -41,10 +43,10 @@
 				clusters[i].showSimilar = false;
 				clusters[i].showCounter = false;
 				clusters[i].userList = false;
+				clusters[i].isDisplayed = true;
 			}
 			sortClusters(e);
 			clusterStore.set(clusters)
-			console.log(clusters);
 		}).then(function() {
 			// Setup scaling for summary bars
 			let vMax = Math.max(...clusters.map(c => c.variance));
@@ -75,9 +77,32 @@
 		clusters.reverse();
 		clusters = clusters;
 	}
+
+	function isBounded(x, low, high) {
+		return low <= x && x <= high;
+	}
+
+	function isDisplayed(cluster, bounds) {
+		let meanValid     = !bounds['mean']     || isBounded(cluster.mean,     ...bounds['mean']);
+		let varianceValid = !bounds['variance'] || isBounded(cluster.variance, ...bounds['variance']);
+		let sizeValid     = !bounds['size']     || isBounded(cluster.size,     ...bounds['size']);
+		return meanValid && varianceValid && sizeValid;
+	}
+
+	// Reactivly set some cluster attributes
+	$: {
+		let display;
+		nClustersDisplayed = 0;
+		for (let i = 0; i < clusters.length; i++) {
+			display = isDisplayed(clusters[i], fltrBounds);
+			clusters[i].isDisplayed = display;
+			nClustersDisplayed += display;
+		}
+	}
   </script>
 
 <main class="max-w-none">
+
 	<!-- TITLE/NAV BAR -->
 	<div class="navbar bg-neutral text-neutral-content">
 		<h1 class="normal-case text-4xl p-4">VLSlice</h1>
@@ -99,45 +124,20 @@
 
 
 	<!-- USER CLUSTER DISPLAY -->
-	<div class="collapse">
-		<input type="checkbox"/> 
-		<div class="collapse-title text-2xl font-medium">
-			<div class="indicator" on:click="{(e) => e.target.parentElement.previousElementSibling.click()}">
-				<span class="indicator-item badge badge-primary">{0}</span> 
-				User List
-			</div>
-			<div class="divider"></div>
-		</div>
-		<div class="collapse-content"> 
-			TODO
-		</div>
-	</div>
+	<Section badge={0}>
+		<span slot="title">User List</span>
+		<svelte:fragment slot="content">TODO</svelte:fragment>
+	</Section>
 
-	<!-- AI CLUSTER DISPLAY -->
-	<div class="collapse">
-		<input type="checkbox"/> 
-		<div class="collapse-title text-2xl font-medium">
-			<div class="indicator" on:click="{(e) => e.target.parentElement.previousElementSibling.click()}">
-				<span class="indicator-item badge badge-primary">{clusters.length}</span> 
-				Clusters
-			</div>
-			<div class="divider"></div>
-		</div>
-		<div class="collapse-content"> 
+	<!-- GENERATED CLUSTER DISPLAY -->
+	<Section badge={nClustersDisplayed}>
+		<span slot="title">Clusters</span>
+		<svelte:fragment slot="content">
 			{#each clusters as cluster (cluster.id)}
-			{#if (!fltrBounds['mean'] 
-					|| (fltrBounds['mean'][0] <= cluster.mean && cluster.mean <= fltrBounds['mean'][1])) 
-			&& (!fltrBounds['variance'] 
-					|| (fltrBounds['variance'][0] <= cluster.variance && cluster.variance <= fltrBounds['variance'][1]))
-			&& (!fltrBounds['size'] 
-					|| (fltrBounds['size'][0] <= cluster.size && cluster.size <= fltrBounds['size'][1]))}
-                <ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize}/>
-			{/if}
+				{#if cluster.isDisplayed}
+					<ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize}/>
+				{/if}
 			{/each}
-		</div>
-	</div>
+		</svelte:fragment>
+	</Section>
 </main>
-
-<style>
-
-</style>
