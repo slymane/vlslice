@@ -115,13 +115,12 @@
 	<Toolbar {enableFilter} on:filter={filter} on:sort={sortClusters} on:reverse={reverseClusters}/>
 	<br>
 
-	<!-- Histogram Based Filtering -->
+	<!-- HISTOGRAM FILTERING -->
 	<div>
 		<HistogramFilter fieldName="mean" bind:bounds={fltrBounds['mean']}/>
 		<HistogramFilter fieldName="variance" bind:bounds={fltrBounds['variance']} scaleY="symlog"/>
 		<HistogramFilter fieldName="size" bind:bounds={fltrBounds['size']} scaleY="symlog"/>
 	</div>
-
 
 	<!-- USER CLUSTER DISPLAY -->
 	<Section badge={0}>
