@@ -1,6 +1,7 @@
 <script>
+    import { clusterStore } from '../store';
+
     export let fieldName;
-    export let data;
     export let bounds = null;
     export let scaleY = 'linear'
 
@@ -9,7 +10,7 @@
 		return `hsl(${hsl})`;
 	}
 
-    $: {
+    clusterStore.subscribe(data => {
         let spec = {
             $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
             description: `Histogram for ${fieldName}`,
@@ -50,7 +51,7 @@
                 bounds = fieldName in e ? e[fieldName] : null;
             })
         });
-    };
+    })
 </script>
 
 <div id='filter-{fieldName}'></div>
