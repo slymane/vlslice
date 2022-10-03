@@ -11,6 +11,10 @@
 	}
 
     clusterStore.subscribe(data => {
+        if (data.length == 0) {
+            return;
+        }
+    
         let spec = {
             $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
             description: `Histogram for ${fieldName}`,

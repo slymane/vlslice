@@ -2,10 +2,13 @@ import argparse
 import os
 import signal
 import sys
+import secrets
+
 from sklearnex import patch_sklearn
 patch_sklearn()
 
-from flask import Flask, g, request, send_from_directory, jsonify
+from flask import Flask, request, send_from_directory, jsonify, session
+from flask_session import Session
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -30,6 +33,10 @@ cfg = yaml.load(open(args.config, 'r'), Loader=yaml.CLoader)
 # FLASK APP CONFIG
 app = Flask(__name__)
 app.config.from_object(cfg['flask'])
+app.config["SESSION_PERMANENT"] = True
+app.config["SESSION_TYPE"] = 'filesystem'
+app.secret_key = secrets.token_urlsafe(16)
+Session(app)
 
 # SERVER CONTEXT
 gserv = {
@@ -37,18 +44,35 @@ gserv = {
     'model': None
 }
 
+# CLIENT CONTEXT
+# session['topk']
+# session['topkidxs']
+# session['topkembs']
+# session['topksims']
+# session['topkdc']
+# session['clusters']
+# session['df']
+# session['dist']
+
 
 # SERVER SETUP / TEARDOWN
 @app.before_first_request
 def setup():
     # Load data
-    h5file = tables.open_file('/nfs/hpc/sw_data/slymane/openimages_64x64.h5')
-    filt = ~np.isin(h5file.root.labels, np.char.encode(cfg['data']['exclude_classes']))
+    h5file = tables.open_file('/nfs/hpc/sw_data/slymane/openimages_b16_2.h5')
+    if cfg['dev']:
+        print("WARNING: Running in development mode.")
+        filt = ~np.isin(h5file.root.labels[:1_000_000], np.char.encode(cfg['data']['exclude_classes']))
+        img_embs = h5file.root.clip[:1_000_000][filt]
+    else:
+        filt = ~np.isin(h5file.root.labels, np.char.encode(cfg['data']['exclude_classes']))
+        img_embs = h5file.root.clip[:][filt]
+
     gserv['data'] = {
         'h5file': h5file,
         'imgs': h5file.root.images,
         'imgs_idx': np.where(filt)[0],
-        'imgs_emb': h5file.root.clip[:][filt]
+        'imgs_emb': img_embs
     }
 
     # Load model
@@ -64,7 +88,7 @@ def shutdown(sig=None, frame=None):
 signal.signal(signal.SIGINT, shutdown)  # NOQA: E305
 
 
-# Display a random number
+# Filter to working set
 @app.route('/filter', methods=['POST'])
 def filter():
     # Parse request
@@ -79,16 +103,16 @@ def filter():
     sims = clip_sim(txt_embs, gserv['data']['imgs_emb'])
 
     # Filter data by captions
-    g.topk = np.argsort(sims[:, 0])[-k:]
-    g.topkidxs = gserv['data']['imgs_idx'][g.topk]
-    g.topkembs = gserv['data']['imgs_emb'][g.topk]
-    g.topksims = sims[g.topk]
-    g.topkdc = delta_c(g.topksims)
+    session['topk'] = np.argsort(sims[:, 0])[-k:]
+    session['topkidxs'] = gserv['data']['imgs_idx'][session['topk']]
+    session['topkembs'] = gserv['data']['imgs_emb'][session['topk']]
+    session['topksims'] = sims[session['topk']]
+    session['topkdc'] = delta_c(session['topksims'])
 
     # Get distances
-    dist_embs = (1 - np.matmul(g.topkembs, g.topkembs.transpose())).clip(0.0, 1.0)
-    dist_dc = sklearn.metrics.pairwise.euclidean_distances((g.topkdc.reshape(-1, 1) + 1) / 2)
-    dist = w * dist_embs + (1 - w) * dist_dc
+    dist_embs = (1 - np.matmul(session['topkembs'], session['topkembs'].transpose())).clip(0.0, 1.0)
+    dist_dc = sklearn.metrics.pairwise.euclidean_distances((session['topkdc'].reshape(-1, 1) + 1) / 2)
+    session['dist'] = w * dist_embs + (1 - w) * dist_dc
 
     # Cluster
     clusterer = cluster.AgglomerativeClustering(
@@ -97,14 +121,14 @@ def filter():
         linkage='average',
         distance_threshold=dt,
         memory='cache/'
-    ).fit(dist)
-    clusters = np.char.mod('%i', clusterer.labels_).astype('U128')
+    ).fit(session['dist'])
+    session['clusters'] = np.char.mod('%i', clusterer.labels_).astype('U128')
 
     # Build dataframe for cluster-level dc metrics
     pd_data = []
     json_data = []
-    for c in np.unique(clusters):
-        dc = g.topkdc[clusters == c]
+    for c in np.unique(session['clusters']):
+        dc = session['topkdc'][session['clusters'] == c]
         c_mean = dc.mean()
         c_var = dc.var().clip(min=0.0)
 
@@ -119,10 +143,69 @@ def filter():
                 'id': i.item(),
                 'b64': img2b64(i, gserv['data']['imgs']),
                 'selected': False
-            } for i in g.topkidxs[clusters == c]]
+            } for i in session['topkidxs'][session['clusters'] == c]]
         })
 
-    g.df = pd.DataFrame(pd_data, columns=['id', 'mean', 'var', 'size'])
+    session['df'] = pd.DataFrame(pd_data, columns=['id', 'mean', 'var', 'size'])
+    return jsonify(json_data)
+
+
+# Get similar datapoints
+@app.route('/similar', methods=['POST'])
+def similar():
+    cluster = request.json['cluster']
+    c1 = cluster['id']
+
+    # Show related points to explore
+    unique, counts = np.unique(session['clusters'], return_counts=True)
+
+    intra_cluster_dist = {c2: 0.0 for c2 in unique}
+    cidx1 = np.where(session['clusters'] == c1)[0]
+    for c2 in unique:
+        cidx2 = np.where(session['clusters'] == c2)[0]
+        ca = cart([cidx1, cidx2])
+        intra_cluster_dist[c2] = session['dist'][ca[0], ca[1]].mean()
+
+    # Get top10 excluding the selected cluster
+    neighbors = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[1:11]
+
+    json_data = {
+        "neighbors": neighbors
+    }
+
+    return jsonify(json_data)
+
+
+# Get counterfactual datapoints
+@app.route('/counter', methods=['POST'])
+def counter():
+    cluster = request.json['cluster']
+    c1 = cluster['id']
+
+    # Show related points to explore
+    unique, counts = np.unique(session['clusters'], return_counts=True)
+
+    intra_cluster_dist = {c2: 0.0 for c2 in unique}
+    cidx1 = np.where(session['clusters'] == c1)[0]
+    for c2 in unique:
+        cidx2 = np.where(session['clusters'] == c2)[0]
+        ca = cart([cidx1, cidx2])
+        intra_cluster_dist[c2] = session['dist'][ca[0], ca[1]].mean()
+
+    # Get top10 excluding the selected cluster
+    if np.sign(cluster['mean']) == -1:
+        for key in session['df'][session['df']['mean'] < 0].id:
+            intra_cluster_dist.pop(key)
+    else:
+        for key in session['df'][session['df']['mean'] > 0].id:
+            intra_cluster_dist.pop(key)
+
+    counters = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[:10]
+
+    json_data = {
+        "counters": counters
+    }
+
     return jsonify(json_data)
 
 
@@ -139,4 +222,4 @@ def home(path):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host=cfg['flask']['host'], port=5000, debug=True)
