@@ -2798,6 +2798,9 @@ body[dir="rtl"] .checkbox:checked,
 .w-auto {
   width: auto;
 }
+.w-80 {
+  width: 20rem;
+}
 .max-w-none {
   max-width: none;
 }

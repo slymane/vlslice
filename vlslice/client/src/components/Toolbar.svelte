@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { createEventDispatcher } from 'svelte';
+    import { hSlide } from '../transitions/hslide'
 
     // Variables to make Eric's life easier
 	const DEV = false;
@@ -11,6 +12,7 @@
     let augment = null;
     let topk = null;
     let sortKey = 'mean';
+    let sortText = null;
     let sortReverse = true;
     
 	onMount(async () => {
@@ -40,6 +42,7 @@
     function sortClusters() {
         dispatch('sort', {
             sortKey: sortKey,
+            sortText: sortText,
             sortReverse: sortReverse
         });
     }
@@ -85,7 +88,7 @@
     </div>
 
     <!-- Sorting -->
-    <div class="w-full max-w-xs">
+    <div class="w-full">
         <label class="label" for="sort" >
             <span class="label-text">Sort Clusters By...</span>
         </label>
@@ -93,8 +96,21 @@
             <select class="select select-bordered" bind:value={sortKey} on:change={sortClusters}>
                 <option value="mean" selected>DC Mean</option>
                 <option value="variance">DC Variance</option>
-                <option value="size">Size</option>
+                <option value="size">Cluster Size</option>
+                <option value="text">Text Similarity</option>
             </select>
+
+            {#if sortKey == "text"}
+                <input 
+                    transition:hSlide={{ axis: 'x' }}
+                    class="input input-bordered w-full max-w-xs" 
+                    type="text" 
+                    placeholder="Search text..."
+                    bind:value={sortText}
+                    on:input={sortClusters}
+                />
+            {/if}
+
             <button class="btn" on:click={reverseClusters}>
                 {#if sortReverse}
                     <i class="fa-solid fa-arrow-down"></i>

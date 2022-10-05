@@ -43,8 +43,6 @@
             .then(r => (r.json()))
             .then(function(jsonData) {
                 similarClusters = jsonData['neighbors'];
-                console.log(jsonData);
-                console.log(similarClusters);
             })
         }
     }

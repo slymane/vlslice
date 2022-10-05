@@ -98,6 +98,12 @@ def filter():
     w = request.json['w']                # Distance/DC cluster weight
     dt = request.json['dt']              # Clustering distance threshold
 
+    session['df'] = None
+    session['clusters'] = None
+    session['dist'] = None
+    session['topkdc'] = None
+    session['topkidxs'] = None
+
     # Embed text captions
     txt_embs = gserv['model'](txt=[baseline, augment])
     sims = clip_sim(txt_embs, gserv['data']['imgs_emb'])
@@ -183,7 +189,7 @@ def counter():
     c1 = cluster['id']
 
     # Show related points to explore
-    unique, counts = np.unique(session['clusters'], return_counts=True)
+    unique = np.unique(session['clusters'])
 
     intra_cluster_dist = {c2: 0.0 for c2 in unique}
     cidx1 = np.where(session['clusters'] == c1)[0]
@@ -205,6 +211,19 @@ def counter():
     json_data = {
         "counters": counters
     }
+
+    return jsonify(json_data)
+
+
+@app.route('/textrank', methods=['POST'])
+def textrank():
+    # Get similarity of each image with text
+    txt_embs = gserv['model'](txt=[request.json['text']])
+    sims = clip_sim(txt_embs, session['topkembs'])
+
+    # Get average similarity for each cluster
+    unique = np.unique(session['clusters'])
+    json_data = {c: sims[session['clusters'] == c].mean().item() for c in unique}
 
     return jsonify(json_data)
 

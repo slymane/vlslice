@@ -36,7 +36,6 @@
 		})
 		.then(r => (r.json()))
 		.then(function(jsonData) {
-			console.log('Assigning new clusters...')
 			clusters = jsonData;
 			for (let i = 0; i < clusters.length; i++) {
 				clusters[i].showMore = false;
@@ -62,15 +61,41 @@
 	}
 
 	function sortClusters(e) {
-		clusters.sort(function(a, b) {
-			let x = a[e.detail.sortKey];
-			let y = b[e.detail.sortKey];
-			return ((x < y) ? -1 : ((x > y) ? 1 : 0));
-		});
-		if (e.detail.sortReverse) {
-			clusters.reverse();
+		if (e.detail.sortKey == "text" && e.detail.sortText != null) {
+			fetch('./textrank', {
+				method: 'POST',
+				headers: {'Content-Type': 'Application/json'},
+				body: JSON.stringify({
+					text: e.detail.sortText
+				})
+			})
+			.then(r => (r.json()))
+			.then(function(jsonData) {
+				clusters.sort(function(a, b) {
+					let x = jsonData[a.id];
+					let y = jsonData[b.id];
+					return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+				})
+
+				if (e.detail.sortReverse) {
+					clusters.reverse();
+				}
+
+				clusters = clusters;
+			});
+		} else {
+			clusters.sort(function(a, b) {
+				let x = a[e.detail.sortKey];
+				let y = b[e.detail.sortKey];
+				return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+			});
+
+			if (e.detail.sortReverse) {
+				clusters.reverse();
+			}
+
+			clusters = clusters;
 		}
-		clusters = clusters;
 	}
 
 	function reverseClusters(e) {

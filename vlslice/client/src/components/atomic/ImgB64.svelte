@@ -6,7 +6,6 @@
 
     function select() {
         selected = !selected;
-        console.log(id + ' - ' + selected);
     }
 </script>
 
