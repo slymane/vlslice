@@ -22,6 +22,9 @@
 	let nClustersDisplayed = null;
 	let nListsDisplayed = null;
 
+	let hoveredList = null;
+	let selectedList = null;
+
 	function filter(e) {
 		enableFilter = false;
 	
@@ -197,17 +200,19 @@
 		<svelte:fragment slot="content">
 			{#each $clusterStore as cluster (cluster.id)}
 				{#if cluster.isUserList && cluster.isDisplayed}
-					<ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize} />
+					<div 
+						on:mouseenter={() => hoveredList = cluster}
+						on:mouseleave={() => hoveredList = null}
+						on:click={() => selectedList = selectedList != cluster ? cluster : null}
+						class:opacity-50={selectedList != null && selectedList != cluster}
+						class:opacity-75={selectedList == null && hoveredList != null && hoveredList != cluster}
+						class:shadow-xl={selectedList == cluster || hoveredList == cluster}
+						style="transition: opacity 500ms;"
+					>
+						<ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize} />
+					</div>
 				{/if}
 			{/each}
-
-			<button 
-				class="btn w-full max-w-xs" 
-				class:btn-disabled={$selectedStore.length == 0} 
-				on:click={addNewList}
-			>
-				Add new list
-			</button>
 		</svelte:fragment>
 	</Section>
 
@@ -224,17 +229,27 @@
 	</Section>
 
 	<!-- ABSOLUTE POSITION ITEMS -->
-	{#if $selectedStore.length > 0}
+	{#if selectedList != null || $selectedStore.length > 0}
 		<div transition:fade class="fixed bottom-10 left-10 w-1/2">
-			<button 
-				class="btn w-1/4" 
-				on:click="{() => console.log("hello world")}"
-			>
-					Add to List ({$selectedStore.length})
-			</button>
+			{#if selectedList != null}
+				<button 
+					class="btn w-1/4"
+					class:btn-disabled={$selectedStore.length == 0}
+					on:click="{() => console.log("hello world")}"
+				>
+						Add to list ({$selectedStore.length})
+				</button>
+			{:else if $selectedStore.length > 0}
+				<button 
+					class="btn w-1/4" 
+					on:click={addNewList}
+				>
+					Add new list  ({$selectedStore.length})
+				</button>
+			{/if}
 
 			<button class="btn btn-error w-1/8" on:click="{unSelectAll}">
-					Clear
+				Clear
 			</button>
 		</div>
 	{/if}

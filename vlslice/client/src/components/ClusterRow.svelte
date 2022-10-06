@@ -69,7 +69,7 @@
 
 </script>
 
-<div class="grid grid-cols-8 mb-20">
+<div class="grid grid-cols-8 mb-20 p-2">
     <!-- Summary -->
     <div class="col-span-2 cluster-summary">
 

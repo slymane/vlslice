@@ -15,7 +15,7 @@
 <img 
     id="img-{id}" 
     alt="Filtered dataset sample" 
-    on:click="{select}" 
+    on:click|stopPropagation="{select}" 
     class="m-0" class:selected
     src="data:image/png;base64,{b64}" 
     width="{size}" 
