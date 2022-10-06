@@ -1,4 +1,6 @@
 <script>
+    import { clusterStore } from '../../store.js';
+
     export let id;
     export let b64;
     export let size;
@@ -6,13 +8,14 @@
 
     function select() {
         selected = !selected;
+        $clusterStore = $clusterStore;
     }
 </script>
 
 <img 
     id="img-{id}" 
     alt="Filtered dataset sample" 
-    on:click="{select}"
+    on:click="{select}" 
     class="m-0" class:selected
     src="data:image/png;base64,{b64}" 
     width="{size}" 

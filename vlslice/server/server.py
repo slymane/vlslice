@@ -17,6 +17,9 @@ from sklearn import cluster
 import tables
 import yaml
 
+# TODO: Gross
+import time
+
 from model import load_model, clip_sim, delta_c
 from utils import img2b64, cart
 
@@ -61,16 +64,20 @@ def setup():
     # Load data
     h5file = tables.open_file('/nfs/hpc/sw_data/slymane/openimages_b16_2.h5')
     if cfg['dev']:
-        print("WARNING: Running in development mode.")
+        print("WARNING: Running in development mode. (1,000,000 images)")
         filt = ~np.isin(h5file.root.labels[:1_000_000], np.char.encode(cfg['data']['exclude_classes']))
         img_embs = h5file.root.clip[:1_000_000][filt]
+        img_iids = h5file.root.paths[:1_000_000][filt]
     else:
+        print(f"Running in full mode. ({len(h5file.root.labels)} images)")
         filt = ~np.isin(h5file.root.labels, np.char.encode(cfg['data']['exclude_classes']))
         img_embs = h5file.root.clip[:][filt]
+        img_iids = h5file.root.paths[:][filt]
 
     gserv['data'] = {
         'h5file': h5file,
         'imgs': h5file.root.images,
+        'imgs_iid': img_iids,
         'imgs_idx': np.where(filt)[0],
         'imgs_emb': img_embs
     }
@@ -111,6 +118,7 @@ def filter():
     # Filter data by captions
     session['topk'] = np.argsort(sims[:, 0])[-k:]
     session['topkidxs'] = gserv['data']['imgs_idx'][session['topk']]
+    session['topkiids'] = gserv['data']['imgs_iid'][session['topk']]
     session['topkembs'] = gserv['data']['imgs_emb'][session['topk']]
     session['topksims'] = sims[session['topk']]
     session['topkdc'] = delta_c(session['topksims'])
@@ -134,25 +142,58 @@ def filter():
     pd_data = []
     json_data = []
     for c in np.unique(session['clusters']):
-        dc = session['topkdc'][session['clusters'] == c]
+        members = session['clusters'] == c
+        dc = session['topkdc'][members]
+
         c_mean = dc.mean()
         c_var = dc.var().clip(min=0.0)
 
-        pd_data.append([c, c_mean, c_var, len(dc)])
+        idx = session['topkidxs'][members]
+        iid = np.char.decode(session['topkiids'][members])
+
+        assert len(idx) == len(iid)
+
+        pd_data.append([str(c), c_mean, c_var, len(idx), idx])
 
         json_data.append({
-            'id': c.item(),
+            'id': str(c.item()),
             'mean': c_mean.item(),
             'variance': c_var.item(),
-            'size': len(dc),
+            'size': len(idx),
             'images': [{
-                'id': i.item(),
-                'b64': img2b64(i, gserv['data']['imgs']),
+                'idx': ix.item(),
+                'iid': ii.item(),
+                'b64': img2b64(ix, gserv['data']['imgs']),
                 'selected': False
-            } for i in session['topkidxs'][session['clusters'] == c]]
+            } for ix, ii in zip(idx, iid)]
         })
 
-    session['df'] = pd.DataFrame(pd_data, columns=['id', 'mean', 'var', 'size'])
+    session['df'] = pd.DataFrame(pd_data,
+                                 columns=['id', 'mean', 'var', 'size', 'idxs']).set_index('id')
+    return jsonify(json_data)
+
+
+@app.route('/userlist', methods=['POST'])
+def userlist():
+    c = f"{time.time()}"
+    idx = np.array(request.json['idxs'])
+    members = np.where(np.isin(session['topkidxs'], idx))[0]
+
+    dc = session['topkdc'][members]
+    c_mean = dc.mean()
+    c_var = dc.var().clip(min=0.0)
+
+    df = pd.DataFrame([[c, c_mean, c_var, len(idx), idx]], 
+                      columns=['id', 'mean', 'var', 'size', 'idxs']).set_index('id')
+    session['df'] = pd.concat([session['df'], df])
+
+    json_data = {
+        'id': c,
+        'mean': c_mean.item(),
+        'variance': c_var.item(),
+        'size': len(idx),
+    }
+
     return jsonify(json_data)
 
 
@@ -161,15 +202,13 @@ def filter():
 def similar():
     cluster = request.json['cluster']
     c1 = cluster['id']
+    r1 = session['df'].loc[c1]
+    m1 = np.where(np.isin(session['topkidxs'], r1.idxs))[0]
 
-    # Show related points to explore
-    unique, counts = np.unique(session['clusters'], return_counts=True)
-
-    intra_cluster_dist = {c2: 0.0 for c2 in unique}
-    cidx1 = np.where(session['clusters'] == c1)[0]
-    for c2 in unique:
-        cidx2 = np.where(session['clusters'] == c2)[0]
-        ca = cart([cidx1, cidx2])
+    intra_cluster_dist = {}
+    for c2, r2 in session['df'].iterrows():
+        m2 = np.where(np.isin(session['topkidxs'], r2.idxs))[0]
+        ca = cart([m1, m2])
         intra_cluster_dist[c2] = session['dist'][ca[0], ca[1]].mean()
 
     # Get top10 excluding the selected cluster
@@ -187,23 +226,21 @@ def similar():
 def counter():
     cluster = request.json['cluster']
     c1 = cluster['id']
+    r1 = session['df'].loc[c1]
+    m1 = np.where(np.isin(session['topkidxs'], r1.idxs))[0]
 
-    # Show related points to explore
-    unique = np.unique(session['clusters'])
-
-    intra_cluster_dist = {c2: 0.0 for c2 in unique}
-    cidx1 = np.where(session['clusters'] == c1)[0]
-    for c2 in unique:
-        cidx2 = np.where(session['clusters'] == c2)[0]
-        ca = cart([cidx1, cidx2])
+    intra_cluster_dist = {}
+    for c2, r2 in session['df'].iterrows():
+        m2 = np.where(np.isin(session['topkidxs'], r2.idxs))[0]
+        ca = cart([m1, m2])
         intra_cluster_dist[c2] = session['dist'][ca[0], ca[1]].mean()
 
     # Get top10 excluding the selected cluster
     if np.sign(cluster['mean']) == -1:
-        for key in session['df'][session['df']['mean'] < 0].id:
+        for key in session['df'][session['df']['mean'] < 0].reset_index().id:
             intra_cluster_dist.pop(key)
     else:
-        for key in session['df'][session['df']['mean'] > 0].id:
+        for key in session['df'][session['df']['mean'] > 0].reset_index().id:
             intra_cluster_dist.pop(key)
 
     counters = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[:10]
@@ -222,8 +259,10 @@ def textrank():
     sims = clip_sim(txt_embs, session['topkembs'])
 
     # Get average similarity for each cluster
-    unique = np.unique(session['clusters'])
-    json_data = {c: sims[session['clusters'] == c].mean().item() for c in unique}
+    json_data = {}
+    for c, r in session['df'].iterrows():
+        m = np.where(np.isin(session['topkidxs'], r.idxs))[0]
+        json_data[c] = sims[m].mean().item()
 
     return jsonify(json_data)
 

@@ -2,8 +2,8 @@
     export let badge;
 </script>
 
-<div class="collapse">
-    <input type="checkbox"/> 
+<div tabindex="0" class="collapse collapse-arrow">
+    <input type="checkbox" checked/> 
     <div class="collapse-title text-2xl font-medium">
         <div class="indicator" on:click="{(e) => e.target.parentElement.previousElementSibling.click()}">
             <span class="indicator-item badge badge-primary">{badge}</span> 

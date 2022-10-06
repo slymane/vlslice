@@ -74,7 +74,7 @@
     </div>
 
     <!-- Filter to TopK -->
-    <div class="w-full w-auto max-w-xs">
+    <div class="w-full max-w-xs">
         <label class="label" for="filter-topk" >
             <span class="label-text">TopK</span>
         </label>

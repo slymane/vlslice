@@ -10,7 +10,7 @@
 <g transform="translate({offsetX}, {offsetY})">
     <!-- Text describing bar -->
     <text 
-        x="60" 
+        x="65" 
         y="10" 
         dominant-baseline="middle" 
         text-anchor="end" 
@@ -21,7 +21,7 @@
 
     <!-- Bar encoding value -->
     <rect 
-        x="65" 
+        x="70" 
         y="5" 
         width="{scale(Math.abs(value))}" 
         height="10" 
@@ -30,7 +30,7 @@
 
     <!-- Text encoding value -->
     <text 
-        x="{70 + scale(Math.abs(value))}" 
+        x="{75 + scale(Math.abs(value))}" 
         y="10" dominant-baseline="middle" 
         fill="hsl(var(--b3))"
     >

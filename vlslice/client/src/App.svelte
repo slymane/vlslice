@@ -1,10 +1,13 @@
 <script>	
 	import * as d3 from "d3";
+	import { fade } from 'svelte/transition';
 	import HistogramFilter from './components/HistogramFilter.svelte';
     import ClusterRow from './components/ClusterRow.svelte';
 	import Toolbar from './components/Toolbar.svelte';
 	import Section from './components/Section.svelte';
-	import { clusterStore } from './store.js';
+	import { clusterStore, selectedStore } from './store.js';
+    import { select_options } from "svelte/internal";
+    import { cluster } from "d3";
 
 	// Filtering variables
 	let enableFilter = true;
@@ -16,8 +19,8 @@
 	let scaleVariance = d3.scaleLinear();
 
 	// Clusters and cluster metadata
-	let clusters = [];
 	let nClustersDisplayed = null;
+	let nListsDisplayed = null;
 
 	function filter(e) {
 		enableFilter = false;
@@ -36,20 +39,20 @@
 		})
 		.then(r => (r.json()))
 		.then(function(jsonData) {
-			clusters = jsonData;
+			let clusters = jsonData;
 			for (let i = 0; i < clusters.length; i++) {
 				clusters[i].showMore = false;
 				clusters[i].showSimilar = false;
 				clusters[i].showCounter = false;
-				clusters[i].userList = false;
 				clusters[i].isDisplayed = true;
+				clusters[i].isUserList = false;
 			}
 			sortClusters(e);
 			clusterStore.set(clusters)
 		}).then(function() {
 			// Setup scaling for summary bars
-			let vMax = Math.max(...clusters.map(c => c.variance));
-			let cMax = Math.max(...clusters.map(c => c.size));
+			let vMax = Math.max(...$clusterStore.map(c => c.variance));
+			let cMax = Math.max(...$clusterStore.map(c => c.size));
 
 			let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
 			let range = [0, cw - 115];
@@ -71,36 +74,36 @@
 			})
 			.then(r => (r.json()))
 			.then(function(jsonData) {
-				clusters.sort(function(a, b) {
+				$clusterStore.sort(function(a, b) {
 					let x = jsonData[a.id];
 					let y = jsonData[b.id];
 					return ((x < y) ? -1 : ((x > y) ? 1 : 0));
 				})
 
 				if (e.detail.sortReverse) {
-					clusters.reverse();
+					$clusterStore.reverse();
 				}
 
-				clusters = clusters;
+				$clusterStore = $clusterStore
 			});
 		} else {
-			clusters.sort(function(a, b) {
+			$clusterStore.sort(function(a, b) {
 				let x = a[e.detail.sortKey];
 				let y = b[e.detail.sortKey];
 				return ((x < y) ? -1 : ((x > y) ? 1 : 0));
 			});
 
 			if (e.detail.sortReverse) {
-				clusters.reverse();
+				$clusterStore.reverse();
 			}
 
-			clusters = clusters;
+			$clusterStore = $clusterStore
 		}
 	}
 
 	function reverseClusters(e) {
-		clusters.reverse();
-		clusters = clusters;
+		$clusterStore.reverse();
+		$clusterStore = $clusterStore;
 	}
 
 	function isBounded(x, low, high) {
@@ -114,19 +117,60 @@
 		return meanValid && varianceValid && sizeValid;
 	}
 
+	function unSelectAll() {
+		for (let i = 0; i < $clusterStore.length; i++) {
+			let cluster = $clusterStore[i];
+			for (let j = 0; j < cluster.images.length; j++) {
+				cluster.images[j].selected = false;
+			}
+		}
+
+		$clusterStore = $clusterStore
+	}
+
+	function addNewList() {
+		fetch('./userlist', {
+			method: 'POST',
+			headers: {'Content-Type': 'Application/json'},
+			body: JSON.stringify({
+				idxs: $selectedStore.map(img => img.idx),
+			})
+		})
+		.then(r => (r.json()))
+		.then(function(jsonData) {
+			jsonData.showMore = false;
+			jsonData.showSimilar = false;
+			jsonData.showCounter = false;
+			jsonData.isDisplayed = true;
+			jsonData.isUserList = true;
+			jsonData.images = $selectedStore;
+
+			$clusterStore = [...$clusterStore, jsonData];
+
+			unSelectAll();
+		})
+	}
+
 	// Reactivly set some cluster attributes
 	$: {
 		let display;
 		nClustersDisplayed = 0;
-		for (let i = 0; i < clusters.length; i++) {
-			display = isDisplayed(clusters[i], fltrBounds);
-			clusters[i].isDisplayed = display;
-			nClustersDisplayed += display;
+		nListsDisplayed = 0;
+		for (let i = 0; i < $clusterStore.length; i++) {
+			let cluster = $clusterStore[i];
+			if (cluster.isUserList) {
+				cluster.isDisplayed = true;
+				nListsDisplayed += 1;
+			} else {
+				display = isDisplayed(cluster, fltrBounds);
+				cluster.isDisplayed = display;
+				nClustersDisplayed += display;
+			}
 		}
 	}
   </script>
 
-<main class="max-w-none">
+<main class="max-w-none relative">
 
 	<!-- TITLE/NAV BAR -->
 	<div class="navbar bg-neutral text-neutral-content">
@@ -148,20 +192,50 @@
 	</div>
 
 	<!-- USER CLUSTER DISPLAY -->
-	<Section badge={0}>
-		<span slot="title">User List</span>
-		<svelte:fragment slot="content">TODO</svelte:fragment>
+	<Section badge={nListsDisplayed}>
+		<span slot="title">Lists</span>
+		<svelte:fragment slot="content">
+			{#each $clusterStore as cluster (cluster.id)}
+				{#if cluster.isUserList && cluster.isDisplayed}
+					<ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize} />
+				{/if}
+			{/each}
+
+			<button 
+				class="btn w-full max-w-xs" 
+				class:btn-disabled={$selectedStore.length == 0} 
+				on:click={addNewList}
+			>
+				Add new list
+			</button>
+		</svelte:fragment>
 	</Section>
 
 	<!-- GENERATED CLUSTER DISPLAY -->
 	<Section badge={nClustersDisplayed}>
 		<span slot="title">Clusters</span>
 		<svelte:fragment slot="content">
-			{#each clusters as cluster (cluster.id)}
-				{#if cluster.isDisplayed}
-					<ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize}/>
+			{#each $clusterStore as cluster (cluster.id)}
+				{#if !cluster.isUserList && cluster.isDisplayed}
+					<ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize} />
 				{/if}
 			{/each}
 		</svelte:fragment>
 	</Section>
+
+	<!-- ABSOLUTE POSITION ITEMS -->
+	{#if $selectedStore.length > 0}
+		<div transition:fade class="fixed bottom-10 left-10 w-1/2">
+			<button 
+				class="btn w-1/4" 
+				on:click="{() => console.log("hello world")}"
+			>
+					Add to List ({$selectedStore.length})
+			</button>
+
+			<button class="btn btn-error w-1/8" on:click="{unSelectAll}">
+					Clear
+			</button>
+		</div>
+	{/if}
 </main>
