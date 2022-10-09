@@ -1,13 +1,14 @@
 <script>	
 	import * as d3 from "d3";
+	import { tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import HistogramFilter from './components/HistogramFilter.svelte';
     import ClusterRow from './components/ClusterRow.svelte';
 	import Toolbar from './components/Toolbar.svelte';
 	import Section from './components/Section.svelte';
 	import { clusterStore, selectedStore } from './store.js';
-    import { select_options } from "svelte/internal";
-    import { cluster } from "d3";
+	import { clickOutside } from './util.js'
+    import { each } from "svelte/internal";
 
 	// Filtering variables
 	let enableFilter = true;
@@ -22,8 +23,30 @@
 	let nClustersDisplayed = null;
 	let nListsDisplayed = null;
 
+	// Filters
+	let filterMean;
+	let filterVar;
+	let filterSize;
+
 	let hoveredList = null;
 	let selectedList = null;
+
+	let selectedImagesToAdd = [];
+	let selectedImagesToRem = [];
+	$: {
+		selectedImagesToAdd = []; 
+		selectedImagesToRem = [];
+
+		for (let i = 0; i < $selectedStore.length; i++) {
+			let img = $selectedStore[i];
+
+			if (selectedList != null && selectedList.images.includes(img)) {
+				selectedImagesToRem.push(img);
+			} else {
+				selectedImagesToAdd.push(img);
+			}
+		}
+	}
 
 	function filter(e) {
 		enableFilter = false;
@@ -50,25 +73,34 @@
 				clusters[i].isDisplayed = true;
 				clusters[i].isUserList = false;
 			}
-			sortClusters(e);
-			clusterStore.set(clusters)
-		}).then(function() {
-			// Setup scaling for summary bars
-			let vMax = Math.max(...$clusterStore.map(c => c.variance));
-			let cMax = Math.max(...$clusterStore.map(c => c.size));
 
-			let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
-			let range = [0, cw - 115];
-			scaleMean = scaleMean.range(range);
-			scaleVariance = scaleVariance.domain([0, vMax]).range(range);
-			scaleSize = scaleSize.domain([0, cMax]).range(range);
+			sortClusters(e, clusters)
+			.then(function(clusters) {
+				clusterStore.set(clusters);
+			})
+			.then(function() {
+				// Setup scaling for summary bars
+				let vMax = Math.max(...$clusterStore.map(c => c.variance));
+				let cMax = Math.max(...$clusterStore.map(c => c.size));
+
+				let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
+				let range = [0, cw - 115];
+				scaleMean = scaleMean.range(range);
+				scaleVariance = scaleVariance.domain([0, vMax]).range(range);
+				scaleSize = scaleSize.domain([0, cMax]).range(range);
+			});
+
 			enableFilter = true;
+			filterMean.updateHistogram(clusters);
+			filterVar.updateHistogram(clusters);
+			filterSize.updateHistogram(clusters);
+
 		});
 	}
 
-	function sortClusters(e) {
+	async function sortClusters(e, clusters) {
 		if (e.detail.sortKey == "text" && e.detail.sortText != null) {
-			fetch('./textrank', {
+			await fetch('./textrank', {
 				method: 'POST',
 				headers: {'Content-Type': 'Application/json'},
 				body: JSON.stringify({
@@ -77,36 +109,29 @@
 			})
 			.then(r => (r.json()))
 			.then(function(jsonData) {
-				$clusterStore.sort(function(a, b) {
+				clusters.sort(function(a, b) {
 					let x = jsonData[a.id];
 					let y = jsonData[b.id];
 					return ((x < y) ? -1 : ((x > y) ? 1 : 0));
 				})
-
-				if (e.detail.sortReverse) {
-					$clusterStore.reverse();
-				}
-
-				$clusterStore = $clusterStore
 			});
 		} else {
-			$clusterStore.sort(function(a, b) {
+			clusters.sort(function(a, b) {
 				let x = a[e.detail.sortKey];
 				let y = b[e.detail.sortKey];
 				return ((x < y) ? -1 : ((x > y) ? 1 : 0));
 			});
-
-			if (e.detail.sortReverse) {
-				$clusterStore.reverse();
-			}
-
-			$clusterStore = $clusterStore
 		}
+
+		if (e.detail.sortReverse) {
+			clusters.reverse();
+		}
+
+		return clusters;
 	}
 
 	function reverseClusters(e) {
-		$clusterStore.reverse();
-		$clusterStore = $clusterStore;
+		clusterStore.update(v => v.reverse())
 	}
 
 	function isBounded(x, low, high) {
@@ -149,9 +174,57 @@
 			jsonData.images = $selectedStore;
 
 			$clusterStore = [...$clusterStore, jsonData];
-
-			unSelectAll();
 		})
+		.then(function() {
+			// Setup scaling for summary bars
+			let vMax = Math.max(...$clusterStore.map(c => c.variance));
+			let cMax = Math.max(...$clusterStore.map(c => c.size));
+
+			let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
+			let range = [0, cw - 115];
+			scaleMean = scaleMean.range(range);
+			scaleVariance = scaleVariance.domain([0, vMax]).range(range);
+			scaleSize = scaleSize.domain([0, cMax]).range(range);
+		});
+	}
+
+	function addSelection() {
+		let update = [...new Set([...selectedList.images, ...selectedImagesToAdd])];
+		updateSelection(update);
+	}
+
+	function remSelection() {
+		let update = selectedList.images.filter(img => !selectedImagesToRem.includes(img));
+		updateSelection(update);
+	}
+
+	function updateSelection(updatedImages) {
+		fetch('./userlist', {
+			method: 'POST',
+			headers: {'Content-Type': 'Application/json'},
+			body: JSON.stringify({
+				c: selectedList.id,
+				idxs: updatedImages.map(img => img.idx)
+			})
+		})
+		.then(r => (r.json()))
+		.then(function(jsonData) {
+			selectedList.mean = jsonData['mean']
+			selectedList.variance = jsonData['variance']
+			selectedList.size = jsonData['size']
+			selectedList.images = updatedImages;
+			$clusterStore = $clusterStore
+		}).then(function() {
+			// Update scaling for summary bars
+			let vMax = Math.max(...$clusterStore.map(c => c.variance));
+			let cMax = Math.max(...$clusterStore.map(c => c.size));
+
+			let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
+			let range = [0, cw - 115];
+			scaleMean = scaleMean.range(range);
+			scaleVariance = scaleVariance.domain([0, vMax]).range(range);
+			scaleSize = scaleSize.domain([0, cMax]).range(range);
+		});
 	}
 
 	// Reactivly set some cluster attributes
@@ -170,6 +243,8 @@
 				nClustersDisplayed += display;
 			}
 		}
+
+		$clusterStore = $clusterStore;
 	}
   </script>
 
@@ -184,14 +259,19 @@
 	<div id="content" class="p-4">
 
 	<!-- TOOL BAR -->
-	<Toolbar {enableFilter} on:filter={filter} on:sort={sortClusters} on:reverse={reverseClusters}/>
+	<Toolbar 
+		{enableFilter} 
+		on:filter={filter} 
+		on:sort={e => sortClusters(e, $clusterStore).then(c => clusterStore.set(c))}
+		on:reverse={reverseClusters}
+	/>
 	<br>
 
 	<!-- HISTOGRAM FILTERING -->
 	<div>
-		<HistogramFilter fieldName="mean" bind:bounds={fltrBounds['mean']}/>
-		<HistogramFilter fieldName="variance" bind:bounds={fltrBounds['variance']} scaleY="symlog"/>
-		<HistogramFilter fieldName="size" bind:bounds={fltrBounds['size']} scaleY="symlog"/>
+		<HistogramFilter bind:this={filterMean} fieldName="mean" bind:bounds={fltrBounds['mean']}/>
+		<HistogramFilter bind:this={filterVar} fieldName="variance" bind:bounds={fltrBounds['variance']} scaleY="symlog"/>
+		<HistogramFilter bind:this={filterSize} fieldName="size" bind:bounds={fltrBounds['size']} scaleY="symlog"/>
 	</div>
 
 	<!-- USER CLUSTER DISPLAY -->
@@ -200,13 +280,15 @@
 		<svelte:fragment slot="content">
 			{#each $clusterStore as cluster (cluster.id)}
 				{#if cluster.isUserList && cluster.isDisplayed}
-					<div 
+					<div
+						use:clickOutside
 						on:mouseenter={() => hoveredList = cluster}
 						on:mouseleave={() => hoveredList = null}
-						on:click={() => selectedList = selectedList != cluster ? cluster : null}
+						on:click={() => selectedList = cluster}
+						on:outclick={() => selectedList = null}
 						class:opacity-50={selectedList != null && selectedList != cluster}
 						class:opacity-75={selectedList == null && hoveredList != null && hoveredList != cluster}
-						class:shadow-xl={selectedList == cluster || hoveredList == cluster}
+						class:shadow-lg={selectedList == cluster || hoveredList == cluster}
 						style="transition: opacity 500ms;"
 					>
 						<ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize} />
@@ -234,21 +316,33 @@
 			{#if selectedList != null}
 				<button 
 					class="btn w-1/4"
-					class:btn-disabled={$selectedStore.length == 0}
-					on:click="{() => console.log("hello world")}"
+					class:btn-disabled={selectedImagesToAdd.length == 0}
+					on:click="{addSelection}"
 				>
-						Add to list ({$selectedStore.length})
+						Add to list ({selectedImagesToAdd.length})
+				</button>
+
+				<button 
+					class="btn w-1/4"
+					class:btn-disabled={selectedImagesToRem.length == 0}
+					on:click="{remSelection}"
+				>
+						Remove from list ({selectedImagesToRem.length})
 				</button>
 			{:else if $selectedStore.length > 0}
 				<button 
 					class="btn w-1/4" 
 					on:click={addNewList}
 				>
-					Add new list  ({$selectedStore.length})
+					Add new list ({$selectedStore.length})
 				</button>
 			{/if}
 
-			<button class="btn btn-error w-1/8" on:click="{unSelectAll}">
+			<button 
+				class="btn btn-error w-1/8" 
+				class:btn-disabled={$selectedStore.length == 0}
+				on:click="{unSelectAll}"
+			>
 				Clear
 			</button>
 		</div>

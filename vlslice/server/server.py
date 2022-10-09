@@ -62,7 +62,7 @@ gserv = {
 @app.before_first_request
 def setup():
     # Load data
-    h5file = tables.open_file('/nfs/hpc/sw_data/slymane/openimages_b16_2.h5')
+    h5file = tables.open_file(cfg['data']['path'])
     if cfg['dev']:
         print("WARNING: Running in development mode. (1,000,000 images)")
         filt = ~np.isin(h5file.root.labels[:1_000_000], np.char.encode(cfg['data']['exclude_classes']))
@@ -186,6 +186,28 @@ def userlist():
     df = pd.DataFrame([[c, c_mean, c_var, len(idx), idx]], 
                       columns=['id', 'mean', 'var', 'size', 'idxs']).set_index('id')
     session['df'] = pd.concat([session['df'], df])
+
+    json_data = {
+        'id': c,
+        'mean': c_mean.item(),
+        'variance': c_var.item(),
+        'size': len(idx),
+    }
+
+    return jsonify(json_data)
+
+
+@app.route('/updateuserlist', methods=['POST'])
+def updateuserlist():
+    c = request.json['c']
+    idx = np.array(request.json['idxs'])
+    members = np.where(np.isin(session['topkidxs'], idx))[0]
+
+    dc = session['topkdc'][members]
+    c_mean = dc.mean()
+    c_var = dc.var().clip(min=0.0)
+
+    session['df'].loc[c] = [c, c_mean, c_var, len(idx), idx]
 
     json_data = {
         'id': c,

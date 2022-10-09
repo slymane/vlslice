@@ -1,6 +1,4 @@
 <script>
-    import { clusterStore } from '../store';
-
     export let fieldName;
     export let bounds = null;
     export let scaleY = 'linear'
@@ -10,7 +8,7 @@
 		return `hsl(${hsl})`;
 	}
 
-    clusterStore.subscribe(data => {
+    export function updateHistogram(data) {
         if (data.length == 0) {
             return;
         }
@@ -55,7 +53,7 @@
                 bounds = fieldName in e ? e[fieldName] : null;
             })
         });
-    })
+    }
 </script>
 
 <div id='filter-{fieldName}'></div>

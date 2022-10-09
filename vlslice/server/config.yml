@@ -1,6 +1,7 @@
 flask:
   host: 0.0.0.0
 data:
+  path: /nfs/hpc/sw_data/slymane/openimages_b16.h5
   exclude_classes:
     - Human eye
     - Human skull
