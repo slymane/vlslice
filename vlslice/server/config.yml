@@ -1,7 +1,7 @@
 flask:
   host: 0.0.0.0
 data:
-  path: /nfs/hpc/sw_data/slymane/openimages_b16.h5
+  path: /home/ubuntu/data/openimages_b16.h5
   exclude_classes:
     - Human eye
     - Human skull
@@ -22,4 +22,4 @@ data:
 model:
   version: openai/clip-vit-base-patch16
   device: cpu
-dev: True
+dev: False
