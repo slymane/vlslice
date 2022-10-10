@@ -20,6 +20,7 @@
     src="data:image/png;base64,{b64}" 
     width="{size}" 
     height="{size}"
+    style="cursor: pointer;"
 />
 
 <style>

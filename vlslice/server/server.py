@@ -95,6 +95,39 @@ def shutdown(sig=None, frame=None):
 signal.signal(signal.SIGINT, shutdown)  # NOQA: E305
 
 
+# Request ranked images for simple interface
+@app.route('/simple', methods=['POST'])
+def simple():
+    # Parse request
+    baseline = request.json['baseline']  # Basleline text caption
+    augment = request.json['augment']    # Augmented text caption
+    k = request.json['k']                # Topk results to filter
+
+    # Embed text captions
+    txt_embs = gserv['model'](txt=[baseline, augment])
+    sim = clip_sim(txt_embs, gserv['data']['imgs_emb'])
+
+    # Get topk images above baseline
+    topk = np.argsort(sim[:, 0])[-k:]
+    sim = sim[topk]
+    idx = gserv['data']['imgs_idx'][topk]
+    iid = gserv['data']['imgs_iid'][topk]
+
+    # Rank images by similarity with augment
+    tops = np.argsort(sim[:, 1])[::-1]
+    idx = idx[tops]
+    iid = np.char.decode(iid[tops])
+
+    images = [{
+        'idx': ix.item(),
+        'iid': ii.item(),
+        'b64': img2b64(ix, gserv['data']['imgs']),
+        'selected': False
+    } for ix, ii in zip(idx, iid)]
+
+    return jsonify(images)
+
+
 # Filter to working set
 @app.route('/filter', methods=['POST'])
 def filter():
