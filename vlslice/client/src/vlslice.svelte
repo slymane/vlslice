@@ -197,7 +197,7 @@
 	}
 
 	function updateSelection(updatedImages) {
-		fetch('./userlist', {
+		fetch('./updateuserlist', {
 			method: 'POST',
 			headers: {'Content-Type': 'Application/json'},
 			body: JSON.stringify({
@@ -303,7 +303,7 @@
     <div transition:fade class="fixed bottom-10 left-10 w-1/2">
         {#if selectedList != null}
             <button 
-                class="btn w-1/4"
+                class="btn w-3/8"
                 class:btn-disabled={selectedImagesToAdd.length == 0}
                 on:click="{addSelection}"
             >
@@ -311,7 +311,7 @@
             </button>
 
             <button 
-                class="btn w-1/4"
+                class="btn w-3/8"
                 class:btn-disabled={selectedImagesToRem.length == 0}
                 on:click="{remSelection}"
             >
@@ -319,7 +319,7 @@
             </button>
         {:else if $selectedStore.length > 0}
             <button 
-                class="btn w-1/4" 
+                class="btn w-3/8" 
                 on:click={addNewList}
             >
                 Add new list ({$selectedStore.length})
@@ -327,7 +327,7 @@
         {/if}
 
         <button 
-            class="btn btn-error w-1/8" 
+            class="btn btn-error w-2/8" 
             class:btn-disabled={$selectedStore.length == 0}
             on:click="{unSelectAll}"
         >

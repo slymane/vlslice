@@ -240,7 +240,7 @@ def updateuserlist():
     c_mean = dc.mean()
     c_var = dc.var().clip(min=0.0)
 
-    session['df'].loc[c] = [c, c_mean, c_var, len(idx), idx]
+    session['df'].loc[c] = [c_mean, c_var, len(idx), idx]
 
     json_data = {
         'id': c,

@@ -8,6 +8,7 @@ dependencies:
   - cudatoolkit=11.3
   - flake8=4.0
   - flask=2.1
+  - flask-session=0.4.0
   - numpy=1.22
   - pandas=1.4
   - pillow=9.0

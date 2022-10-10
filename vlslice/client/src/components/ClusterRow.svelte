@@ -133,7 +133,9 @@
     <div class="shadow-lg shadow-success w-9/10 p-8 mb-8" transition:slide>
         {#each similarClusters as cid}
             {@const similarCluster = $clusterStore.filter(c => c.id == cid)[0]}
-            <svelte:self cluster={similarCluster} {scaleMean} {scaleVariance} {scaleSize}></svelte:self>
+            {#if cluster.id != cid}
+                <svelte:self cluster={similarCluster} {scaleMean} {scaleVariance} {scaleSize}></svelte:self>
+            {/if}
         {/each}
     </div>
 {/if}
