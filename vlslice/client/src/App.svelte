@@ -9,7 +9,14 @@
 
 	<!-- TITLE/NAV BAR -->
 	<div class="navbar bg-neutral text-neutral-content flex justify-between">
-		<h1 class="normal-case text-4xl p-4">VLSlice</h1>
+		<h1 class="normal-case text-4xl p-4">
+			VLSlice
+			{#if useSimpleInterface}
+				(Interface-B)
+			{:else}
+				(Interface-A)
+			{/if}
+		</h1>
 
 		<button class="btn" on:click={() => useSimpleInterface = !useSimpleInterface}>
 			Switch Interfaces

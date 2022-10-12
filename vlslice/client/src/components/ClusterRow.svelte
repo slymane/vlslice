@@ -69,7 +69,7 @@
 
 </script>
 
-<div class="grid grid-cols-8 mb-20 p-2">
+<div class="grid grid-cols-8 p-2">
     <!-- Summary -->
     <div class="col-span-2 cluster-summary">
 
@@ -78,8 +78,8 @@
 
         <!-- Selector Buttons -->
         <div class="flex flex-wrap justify-center">
-            <button class="btn btn-xs btn-outline btn-success w-1/3 mx-2 my-1" on:click={selectAll}>Select All</button>
-            <button class="btn btn-xs btn-outline btn-error w-1/3 mx-2 my-1" on:click={unselectAll}>Unselect All</button>
+            <button class="btn btn-xs btn-outline w-1/3 mx-2 my-1" on:click={selectAll}>Select All</button>
+            <button class="btn btn-xs btn-outline w-1/3 mx-2 my-1" on:click={unselectAll}>Unselect All</button>
         </div>
     </div>
 

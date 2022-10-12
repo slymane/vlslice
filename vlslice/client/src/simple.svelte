@@ -1,5 +1,6 @@
 <script>
     import ImgB64 from './components/atomic/ImgB64.svelte'
+    import { exportSelection } from './util'
 
     let baseline = null;
     let augment = null;
@@ -28,16 +29,6 @@
             enableFilter = true;
 		});
 	}
-
-    function exportSelection(e) {
-        let data = selected.map(i => i.iid)
-        var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-        var downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "selected.json");
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
 
 </script>
 
@@ -88,7 +79,7 @@
     <button 
         class="btn w-1/8" 
         class:btn-disabled={selected.length == 0}
-        on:click={exportSelection}
+        on:click={() => exportSelection(selected)}
     >
         Export Selection ({selected.length})
     </button>

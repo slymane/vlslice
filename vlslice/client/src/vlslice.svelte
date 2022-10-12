@@ -6,7 +6,7 @@
 	import Toolbar from './components/Toolbar.svelte';
 	import Section from './components/Section.svelte';
 	import { clusterStore, selectedStore } from './store.js';
-	import { clickOutside } from './util.js'
+	import { clickOutside, exportSelection } from './util.js'
 
 	// Filtering variables
 	let enableFilter = true;
@@ -325,6 +325,14 @@
                 Add new list ({$selectedStore.length})
             </button>
         {/if}
+
+		<button 
+			class="btn w-1/8" 
+			class:btn-disabled={$selectedStore.length == 0}
+			on:click={() => exportSelection($selectedStore)}
+		>
+			Export Selection ({$selectedStore.length})
+		</button>
 
         <button 
             class="btn btn-error w-2/8" 
