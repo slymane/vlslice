@@ -274,6 +274,7 @@
                     on:mouseleave={() => hoveredList = null}
                     on:click={() => selectedList = cluster}
                     on:outclick={() => selectedList = null}
+					class="my-14"
                     class:opacity-50={selectedList != null && selectedList != cluster}
                     class:opacity-75={selectedList == null && hoveredList != null && hoveredList != cluster}
                     class:shadow-lg={selectedList == cluster || hoveredList == cluster}

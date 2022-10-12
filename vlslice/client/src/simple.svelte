@@ -146,6 +146,7 @@
                 on:mouseleave={() => hoveredList = null}
                 on:click={() => selectedList = list}
                 on:outclick={() => selectedList = null}
+                class="my-14"
                 class:opacity-50={selectedList != null && selectedList != list}
                 class:opacity-75={selectedList == null && hoveredList != null && hoveredList != list}
                 class:shadow-lg={selectedList == list || hoveredList == list}

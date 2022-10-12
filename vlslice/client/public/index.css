@@ -2755,6 +2755,10 @@ body[dir="rtl"] .checkbox:checked,
 .m-0 {
   margin: 0px;
 }
+.my-14 {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+}
 .mx-2 {
   margin-left: 0.5rem;
   margin-right: 0.5rem;
