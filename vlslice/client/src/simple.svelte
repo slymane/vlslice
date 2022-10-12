@@ -1,14 +1,82 @@
 <script>
     import ImgB64 from './components/atomic/ImgB64.svelte'
-    import { exportSelection } from './util'
+    import { clickOutside, exportSelection } from './util.js'
+    import { fade } from 'svelte/transition';
+    import Section from './components/Section.svelte';
+    import { clusterStore } from './store'
 
     let baseline = null;
     let augment = null;
     let topk = null;
     let enableFilter = true;
-    let images = []
+
+    let hoveredList = null;
+    let selectedList = null;
+    let lists = [];
+    let images = [];
+    let lid = 0;
+
+    clusterStore.subscribe(e => {
+        lists = lists;
+        images = images;
+    })
+
+    let selectedImagesToAdd = [];
+    let selectedImagesToRem = [];
+    $: {
+		selectedImagesToAdd = []; 
+		selectedImagesToRem = [];
+
+		for (let i = 0; i < selected.length; i++) {
+			let img = selected[i];
+
+			if (selectedList != null && selectedList.images.includes(img)) {
+				selectedImagesToRem.push(img);
+			} else {
+				selectedImagesToAdd.push(img);
+			}
+		}
+	}
 
     $: selected = images.filter(i => i.selected)
+
+    function addNewList() {
+        lists = [...lists, {"id": lid, "images": selected}];
+        lists = lists;
+        images = images;
+        lid++;
+    }
+
+    function addSelection() {
+        console.log(lists);
+        console.log(selectedList);
+        for (let i = 0; i < lists.length; i++) {
+            if (lists[i].id == selectedList.id) {
+                console.log("Adding");
+                lists[i].images = [...lists[i].images, ...selectedImagesToAdd];
+            }
+        }
+        lists = lists;
+        images = images;
+    }
+
+    function remSelection() {
+        for (let i = 0; i < lists.length; i++) {
+            if (lists[i].id == selectedList.id) {
+                lists[i].images = lists[i].images.filter(img => !selectedImagesToRem.includes(img));
+            }
+        }
+        lists = lists;
+        images = images;
+    }
+
+    function unSelectAll() {
+        for (let i = 0; i < images.length; i++) {
+            images[i].selected = false;
+        }
+        lists = lists;
+        images = images;
+    }
 
 	function filter() {
 		enableFilter = false;
@@ -67,23 +135,91 @@
     </div>
 </div>
 
-<div class="flex flex-wrap justify-center">
-    {#each images as img (img.idx)}
-        <div class="m-1">
-            <ImgB64 id={img.idx} b64={img.b64} bind:selected={img.selected} size={128}/>
-        </div>
-    {/each}
-</div>
+<!-- USER CLUSTER DISPLAY -->
+<Section badge={lists.length}>
+    <span slot="title">Lists</span>
+    <svelte:fragment slot="content">
+        {#each lists as list (list.id)}
+            <div
+                use:clickOutside
+                on:mouseenter={() => hoveredList = list}
+                on:mouseleave={() => hoveredList = null}
+                on:click={() => selectedList = list}
+                on:outclick={() => selectedList = null}
+                class:opacity-50={selectedList != null && selectedList != list}
+                class:opacity-75={selectedList == null && hoveredList != null && hoveredList != list}
+                class:shadow-lg={selectedList == list || hoveredList == list}
+                style="transition: opacity 500ms;"
+            >
+                <div class="flex flex-wrap justify-left p-2">
+                    {#each list.images as img (img.idx)}
+                        <div class="m-1">
+                            <ImgB64 id={img.idx} b64={img.b64} bind:selected={img.selected} size={128}/>
+                        </div>
+                    {/each}
+                </div>
+            </div>
+        {/each}
+    </svelte:fragment>
+</Section>
 
-<div class="fixed bottom-10 left-10 w-1/2">
-    <button 
-        class="btn w-1/8" 
-        class:btn-disabled={selected.length == 0}
-        on:click={() => exportSelection(selected)}
-    >
-        Export Selection ({selected.length})
-    </button>
-</div>
+<Section badge={images.length}>
+    <span slot="title">Images</span>
+    <svelte:fragment slot="content">
+        <div class="flex flex-wrap justify-center">
+            {#each images as img (img.idx)}
+                <div class="m-1">
+                    <ImgB64 id={img.idx} b64={img.b64} bind:selected={img.selected} size={128}/>
+                </div>
+            {/each}
+        </div>
+    </svelte:fragment>
+</Section>
+
+{#if selectedList != null || selected.length > 0}
+    <div transition:fade class="fixed bottom-10 left-10 w-1/2">
+        {#if selectedList != null}
+            <button 
+                class="btn w-3/8"
+                class:btn-disabled={selectedImagesToAdd.length == 0}
+                on:click="{addSelection}"
+            >
+                    Add to list ({selectedImagesToAdd.length})
+            </button>
+
+            <button 
+                class="btn w-3/8"
+                class:btn-disabled={selectedImagesToRem.length == 0}
+                on:click="{remSelection}"
+            >
+                    Remove from list ({selectedImagesToRem.length})
+            </button>
+        {:else if selected.length > 0}
+            <button 
+                class="btn w-3/8" 
+                on:click={addNewList}
+            >
+                Add new list ({selected.length})
+            </button>
+        {/if}
+
+		<button 
+			class="btn w-1/8" 
+			class:btn-disabled={selected.length == 0}
+			on:click={() => exportSelection(selected)}
+		>
+			Export Selection ({selected.length})
+		</button>
+
+        <button 
+            class="btn btn-error w-2/8" 
+            class:btn-disabled={selected.length == 0}
+            on:click="{unSelectAll}"
+        >
+            Clear
+        </button>
+    </div>
+{/if}
 
 <style>
     #controls {
