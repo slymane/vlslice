@@ -1,5 +1,6 @@
 vlslice/client/node_modules/
 vlslice/client/public/build/
+vlslice/client/public/openimages
 vlslice/server/flask_session/
 vlslice/server/cache
 .DS_Store
