@@ -126,7 +126,7 @@
             <span class="label-text">TopK</span>
         </label>
         <div id="filter-topk" class="input-group">
-            <input class="input input-bordered w-full" type="number" placeholder="1000" bind:value={topk}/>
+            <input class="input input-bordered w-full" type="number" placeholder="1000" min="2" bind:value={topk}/>
             <button class="btn" disabled="{enableFilter ? null : 'disabled'}" type="submit" on:click={filter}>
                 Filter
                 <i class="fa-solid fa-cog ml-1" class:fa-spin={!enableFilter}></i>
@@ -155,7 +155,7 @@
                 <div class="flex flex-wrap justify-left p-2">
                     {#each list.images as img (img.idx)}
                         <div class="m-1">
-                            <ImgB64 id={img.idx} b64={img.b64} bind:selected={img.selected} size={128}/>
+                            <ImgB64 id={img.idx} path={img.iid} bind:selected={img.selected} size={128}/>
                         </div>
                     {/each}
                 </div>
@@ -170,7 +170,7 @@
         <div class="flex flex-wrap justify-center">
             {#each images as img (img.idx)}
                 <div class="m-1">
-                    <ImgB64 id={img.idx} b64={img.b64} bind:selected={img.selected} size={128}/>
+                    <ImgB64 id={img.idx} path={img.iid} bind:selected={img.selected} size={128}/>
                 </div>
             {/each}
         </div>

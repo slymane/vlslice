@@ -87,14 +87,14 @@
     <div class="col-span-5">
         <div class="grid grid-cols-12 gap-0.5 mb-px">
             {#each cluster.images.slice(0, imgsNPreview) as img (img.idx)}
-                <ImgB64 id={img.idx} b64={img.b64} bind:selected={img.selected} size={imgDispSize}/>
+                <ImgB64 id={img.idx} path={img.iid} bind:selected={img.selected} size={imgDispSize}/>
             {/each}
         </div>
 
         {#if cluster.showMore}
             <div class="grid grid-cols-12 gap-0.5" transition:slide>
                 {#each cluster.images.slice(imgsNPreview, cluster.images.length) as img (img.idx)}
-                    <ImgB64 class="m-0" id={img.idx} b64={img.b64} bind:selected={img.selected} size={imgDispSize}/>
+                    <ImgB64 class="m-0" id={img.idx} path={img.iid} bind:selected={img.selected} size={imgDispSize}/>
                 {/each}
             </div>
         {/if}
@@ -131,6 +131,7 @@
 
 {#if showSimilar}
     <div class="shadow-lg shadow-success w-9/10 p-8 mb-8" transition:slide>
+        <h1 class="text-success">Similar clusters...</h1>
         {#each similarClusters as cid}
             {@const similarCluster = $clusterStore.filter(c => c.id == cid)[0]}
             {#if cluster.id != cid}
@@ -142,6 +143,7 @@
 
 {#if showCounter}
     <div class="shadow-lg shadow-error w-9/10 p-8 mb-8" transition:slide>
+        <h1 class="text-error">Counterfactual clusters...</h1>
         {#each counterClusters as cid}
             {@const counterCluster = $clusterStore.filter(c => c.id == cid)[0]}
             <svelte:self cluster={counterCluster} {scaleMean} {scaleVariance} {scaleSize}></svelte:self>

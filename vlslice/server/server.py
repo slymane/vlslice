@@ -1,4 +1,3 @@
-import argparse
 import os
 import signal
 import sys
@@ -14,24 +13,18 @@ import pandas as pd
 from scipy import stats
 import sklearn
 from sklearn import cluster
-import tables
 import yaml
+import time
 
 # TODO: Gross
 import time
 
 from model import load_model, clip_sim, delta_c
-from utils import img2b64, cart
-
-
-# CMD ARGUMENTS
-default_cfg = f'{os.path.dirname(os.path.abspath(__file__))}/config.yml'
-parser = argparse.ArgumentParser()
-parser.add_argument('-c', '--config', default=default_cfg, help='YAML VLSlice config')
-args = parser.parse_args()
+from utils import cart
 
 # YAML CONFIG
-cfg = yaml.load(open(args.config, 'r'), Loader=yaml.CLoader)
+cfg_path = f'{os.path.dirname(os.path.abspath(__file__))}/config.yml'
+cfg = yaml.load(open(cfg_path, 'r'), Loader=yaml.CLoader)
 
 # FLASK APP CONFIG
 app = Flask(__name__)
@@ -57,75 +50,75 @@ gserv = {
 # session['df']
 # session['dist']
 
+# SERVER SETUP
+if cfg['dev']:
+    print("Loading dev embeddings...", end='\r')
+    embs = np.load(os.path.join(cfg['data']['path'], "embs_dev.npy"))
+    lbls = np.load(os.path.join(cfg['data']['path'], "lbls_dev.npy"))
+    print("Loading dev embeddings... Done.")
+else:
+    print("Loading all embeddings...", end='\r')
+    embs = np.load(os.path.join(cfg['data']['path'], "embs_all.npy"))
+    lbls = np.load(os.path.join(cfg['data']['path'], "lbls_all.npy"))
+    print("Loading all embeddings... Done.")
 
-# SERVER SETUP / TEARDOWN
-@app.before_first_request
-def setup():
-    # Load data
-    h5file = tables.open_file(cfg['data']['path'])
-    if cfg['dev']:
-        print("WARNING: Running in development mode. (1,000,000 images)")
-        filt = ~np.isin(h5file.root.labels[:1_000_000], np.char.encode(cfg['data']['exclude_classes']))
-        img_embs = h5file.root.clip[:1_000_000][filt]
-        img_iids = h5file.root.paths[:1_000_000][filt]
-    else:
-        print(f"Running in full mode. ({len(h5file.root.labels)} images)")
-        filt = ~np.isin(h5file.root.labels, np.char.encode(cfg['data']['exclude_classes']))
-        img_embs = h5file.root.clip[:][filt]
-        img_iids = h5file.root.paths[:][filt]
+filt = ~np.isin(np.char.decode(lbls), cfg['data']['exclude_classes'])
 
-    gserv['data'] = {
-        'h5file': h5file,
-        'imgs': h5file.root.images,
-        'imgs_iid': img_iids,
-        'imgs_idx': np.where(filt)[0],
-        'imgs_emb': img_embs
-    }
+embs = embs[filt]
+iid = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
 
-    # Load model
-    gserv['model'] = load_model(**cfg['model'])
+gserv['data'] = {
+    'imgs_iid': iid,
+    'imgs_idx': np.where(filt)[0],
+    'imgs_emb': embs
+}
 
-
-def shutdown(sig=None, frame=None):
-    if 'h5file' in gserv['data']:
-        gserv['data']['h5file'].close()
-
-    print('Shutting down server...')
-    sys.exit(0)
-signal.signal(signal.SIGINT, shutdown)  # NOQA: E305
+# Load model
+gserv['model'] = load_model(**cfg['model'])
 
 
 # Request ranked images for simple interface
 @app.route('/simple', methods=['POST'])
 def simple():
+    print("START 0")
+    t = time.time()
+
     # Parse request
     baseline = request.json['baseline']  # Basleline text caption
     augment = request.json['augment']    # Augmented text caption
     k = request.json['k']                # Topk results to filter
+    print(f"A {time.time() - t}")
 
     # Embed text captions
     txt_embs = gserv['model'](txt=[baseline, augment])
     sim = clip_sim(txt_embs, gserv['data']['imgs_emb'])
+    print(f"B {time.time() - t}")
 
     # Get topk images above baseline
     topk = np.argsort(sim[:, 0])[-k:]
     sim = sim[topk]
     idx = gserv['data']['imgs_idx'][topk]
     iid = gserv['data']['imgs_iid'][topk]
+    print(f"C {time.time() - t}")
 
     # Rank images by similarity with augment
     tops = np.argsort(sim[:, 1])[::-1]
     idx = idx[tops]
-    iid = np.char.decode(iid[tops])
+    iid = iid[tops]
+    print(f"D {time.time() - t}")
 
     images = [{
         'idx': ix.item(),
         'iid': ii.item(),
-        'b64': img2b64(ix, gserv['data']['imgs']),
         'selected': False
     } for ix, ii in zip(idx, iid)]
+    print(f"E {time.time() - t}")
 
-    return jsonify(images)
+    j = jsonify(images)
+    print(f"F {time.time() - t}")
+
+    print(f"END {time.time() - t}")
+    return j
 
 
 # Filter to working set
@@ -182,7 +175,7 @@ def filter():
         c_var = dc.var().clip(min=0.0)
 
         idx = session['topkidxs'][members]
-        iid = np.char.decode(session['topkiids'][members])
+        iid = session['topkiids'][members]
 
         assert len(idx) == len(iid)
 
@@ -196,7 +189,6 @@ def filter():
             'images': [{
                 'idx': ix.item(),
                 'iid': ii.item(),
-                'b64': img2b64(ix, gserv['data']['imgs']),
                 'selected': False
             } for ix, ii in zip(idx, iid)]
         })

@@ -2,7 +2,7 @@
     import { clusterStore } from '../../store.js';
 
     export let id;
-    export let b64;
+    export let path;
     export let size;
     export let selected;
 
@@ -17,10 +17,11 @@
     alt="Filtered dataset sample" 
     on:click|stopPropagation="{select}" 
     class="expand m-0" class:selected
-    src="data:image/png;base64,{b64}" 
+    src="openimages/{path}" 
     width="{size}" 
     height="{size}"
     style="cursor: pointer;"
+    loading="lazy"
 />
 
 <style>
