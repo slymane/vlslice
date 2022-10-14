@@ -1,7 +1,8 @@
 flask:
   host: 0.0.0.0
 data:
-  path: /home/ubuntu/data/
+  hpc_path: /nfs/hpc/sw_data/slymane/
+  aws_path: /users/ubuntu/data/
   exclude_classes:
     - human eye
     - human skull
