@@ -3181,9 +3181,6 @@ body[dir="rtl"] .checkbox:checked,
 .gap-0 {
   gap: 0px;
 }
-.overflow-y-scroll {
-  overflow-y: scroll;
-}
 .bg-neutral {
   --tw-bg-opacity: 1;
   background-color: hsl(var(--n) / var(--tw-bg-opacity));
