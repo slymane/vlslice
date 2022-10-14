@@ -54,21 +54,22 @@ gserv = {
 if cfg['dev']:
     print("Loading dev embeddings...", end='\r')
     embs = np.load(os.path.join(cfg['data']['path'], "embs_dev.npy"))
-    lbls = np.load(os.path.join(cfg['data']['path'], "lbls_dev.npy"))
+    lbls = np.char.decode(np.load(os.path.join(cfg['data']['path'], "lbls_dev.npy")))
+    iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
     print("Loading dev embeddings... Done.")
 else:
     print("Loading all embeddings...", end='\r')
     embs = np.load(os.path.join(cfg['data']['path'], "embs_all.npy"))
-    lbls = np.load(os.path.join(cfg['data']['path'], "lbls_all.npy"))
+    lbls = np.char.decode(np.load(os.path.join(cfg['data']['path'], "lbls_all.npy")))
+    iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
     print("Loading all embeddings... Done.")
 
-filt = ~np.isin(np.char.decode(lbls), cfg['data']['exclude_classes'])
-
+filt = ~np.isin(lbls, cfg['data']['exclude_classes'])
+iids = iids[filt]
 embs = embs[filt]
-iid = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
 
 gserv['data'] = {
-    'imgs_iid': iid,
+    'imgs_iid': iids,
     'imgs_idx': np.where(filt)[0],
     'imgs_emb': embs
 }
@@ -80,45 +81,33 @@ gserv['model'] = load_model(**cfg['model'])
 # Request ranked images for simple interface
 @app.route('/simple', methods=['POST'])
 def simple():
-    print("START 0")
-    t = time.time()
-
     # Parse request
     baseline = request.json['baseline']  # Basleline text caption
     augment = request.json['augment']    # Augmented text caption
     k = request.json['k']                # Topk results to filter
-    print(f"A {time.time() - t}")
 
     # Embed text captions
     txt_embs = gserv['model'](txt=[baseline, augment])
     sim = clip_sim(txt_embs, gserv['data']['imgs_emb'])
-    print(f"B {time.time() - t}")
 
     # Get topk images above baseline
     topk = np.argsort(sim[:, 0])[-k:]
     sim = sim[topk]
     idx = gserv['data']['imgs_idx'][topk]
     iid = gserv['data']['imgs_iid'][topk]
-    print(f"C {time.time() - t}")
 
     # Rank images by similarity with augment
     tops = np.argsort(sim[:, 1])[::-1]
     idx = idx[tops]
     iid = iid[tops]
-    print(f"D {time.time() - t}")
 
     images = [{
         'idx': ix.item(),
         'iid': ii.item(),
         'selected': False
     } for ix, ii in zip(idx, iid)]
-    print(f"E {time.time() - t}")
 
-    j = jsonify(images)
-    print(f"F {time.time() - t}")
-
-    print(f"END {time.time() - t}")
-    return j
+    return jsonify(images)
 
 
 # Filter to working set

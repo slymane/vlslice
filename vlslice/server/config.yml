@@ -3,22 +3,22 @@ flask:
 data:
   path: /home/ubuntu/data/
   exclude_classes:
-    - Human eye
-    - Human skull
-    - Human head
-    - Human face
-    - Human mouth
-    - Human ear
-    - Human nose
-    - Human hair
-    - Human hand
-    - Human foot
-    - Human arm
-    - Human leg
-    - Human beard
-    - Human body
-    - Tire
-    - Wheel
+    - human eye
+    - human skull
+    - human head
+    - human face
+    - human mouth
+    - human ear
+    - human nose
+    - human hair
+    - human hand
+    - human foot
+    - human arm
+    - human leg
+    - human beard
+    - human body
+    - tire
+    - wheel
 model:
   version: openai/clip-vit-base-patch16
   device: cpu

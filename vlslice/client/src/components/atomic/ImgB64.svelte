@@ -1,5 +1,6 @@
 <script>
     import { clusterStore } from '../../store.js';
+    import { useLazyImage as lazyImage } from 'svelte-lazy-image';
 
     export let id;
     export let path;
@@ -17,11 +18,11 @@
     alt="Filtered dataset sample" 
     on:click|stopPropagation="{select}" 
     class="expand m-0" class:selected
-    src="openimages/{path}" 
+    data-src="http://d30mxw38m32j53.cloudfront.net/{path}" 
     width="{size}" 
     height="{size}"
     style="cursor: pointer;"
-    loading="lazy"
+    use:lazyImage
 />
 
 <style>
