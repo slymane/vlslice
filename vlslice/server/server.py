@@ -51,16 +51,17 @@ gserv = {
 # session['dist']
 
 # SERVER SETUP
+root = cfg['data']['hpc_path'] if 'oregonstate' in os.uname()[1] else cfg['data']['aws_path']
 if cfg['dev']:
     print("Loading dev embeddings...", end='\r')
-    embs = np.load(os.path.join(cfg['data']['path'], "embs_dev.npy"))
-    lbls = np.char.decode(np.load(os.path.join(cfg['data']['path'], "lbls_dev.npy")))
+    embs = np.load(os.path.join(root, "embs_dev.npy"))
+    lbls = np.char.decode(np.load(os.path.join(root, "lbls_dev.npy")))
     iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
     print("Loading dev embeddings... Done.")
 else:
     print("Loading all embeddings...", end='\r')
-    embs = np.load(os.path.join(cfg['data']['path'], "embs_all.npy"))
-    lbls = np.char.decode(np.load(os.path.join(cfg['data']['path'], "lbls_all.npy")))
+    embs = np.load(os.path.join(root, "embs_all.npy"))
+    lbls = np.char.decode(np.load(os.path.join(root, "lbls_all.npy")))
     iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
     print("Loading all embeddings... Done.")
 
@@ -209,6 +210,13 @@ def userlist():
     }
 
     return jsonify(json_data)
+
+
+@app.route('/remlist', methods=['POST'])
+def remlist():
+    cluster = request.json
+    session['df'].drop([cluster["id"]], inplace=True)
+    return jsonify({"status": "success"})
 
 
 @app.route('/updateuserlist', methods=['POST'])

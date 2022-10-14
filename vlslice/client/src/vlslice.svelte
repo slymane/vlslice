@@ -1,13 +1,10 @@
 <script>	
 	import * as d3 from "d3";
-	import { fade } from 'svelte/transition';
 	import HistogramFilter from './components/HistogramFilter.svelte';
     import ClusterRow from './components/ClusterRow.svelte';
 	import Toolbar from './components/Toolbar.svelte';
 	import Section from './components/Section.svelte';
 	import { clusterStore, selectedStore } from './store.js';
-	import { clickOutside, exportSelection } from './util.js'
-    import { logicalHSlide } from "./transitions/hslide";
 
 	// Filtering variables
 	let enableFilter = true;
@@ -63,17 +60,9 @@
 			.then(function(clusters) {
 				clusterStore.set(clusters);
 			})
-			.then(function() {
-				// Setup scaling for summary bars
-				let vMax = Math.max(...$clusterStore.map(c => c.variance));
-				let cMax = Math.max(...$clusterStore.map(c => c.size));
-
-				let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
-				let range = [0, cw - 115];
-				scaleMean = scaleMean.range(range);
-				scaleVariance = scaleVariance.domain([0, vMax]).range(range);
-				scaleSize = scaleSize.domain([0, cMax]).range(range);
-			});
+			.then((function() {
+				setScale();
+			}));
 
 			enableFilter = true;
 			filterMean.updateHistogram(clusters);
@@ -141,6 +130,18 @@
 		$clusterStore = $clusterStore
 	}
 
+	function setScale() {
+			// Setup scaling for summary bars
+			let vMax = Math.max(...$clusterStore.map(c => c.variance));
+			let cMax = Math.max(...$clusterStore.map(c => c.size));
+
+			let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
+			let range = [0, cw - 115];
+			scaleMean = scaleMean.range(range);
+			scaleVariance = scaleVariance.domain([0, vMax]).range(range);
+			scaleSize = scaleSize.domain([0, cMax]).range(range);
+	}
+
 	function addNewList() {
 		fetch('./userlist', {
 			method: 'POST',
@@ -162,19 +163,23 @@
 			$clusterStore = [...$clusterStore, jsonData];
 		})
 		.then(function() {
-			// Setup scaling for summary bars
-			let vMax = Math.max(...$clusterStore.map(c => c.variance));
-			let cMax = Math.max(...$clusterStore.map(c => c.size));
-
-			let cw = document.getElementsByClassName('cluster-summary')[0].clientWidth;
-			let range = [0, cw - 115];
-			scaleMean = scaleMean.range(range);
-			scaleVariance = scaleVariance.domain([0, vMax]).range(range);
-			scaleSize = scaleSize.domain([0, cMax]).range(range);
-
+			setScale();
 			unSelectAll();
 			modalOpen = false;
 		});
+	}
+
+	function remList(cluster) {
+		fetch('./remlist', {
+			method: 'POST',
+			headers: {'Content-Type': 'Application/json'},
+			body: JSON.stringify(cluster)
+		}).then(function() {
+			delete cidToName[cluster.id];
+			cidToName = cidToName
+			$clusterStore = $clusterStore.filter(c => c.id != cluster.id);
+			setScale();
+		})
 	}
 
 	function addSelection(cid) {
@@ -283,7 +288,10 @@
             {#if cluster.isUserList && cluster.isDisplayed}
 				<div class="my-14">
 					<h2 class="text-xl font-bold">{cidToName[cluster.id]}</h2>
-					<ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize} />
+					<ClusterRow 
+						{cluster} name={cidToName[cluster.id]} 
+						{scaleMean} {scaleVariance} {scaleSize} 
+						on:delete={() => remList(cluster)}/>
 				</div>
             {/if}
         {/each}

@@ -1,9 +1,8 @@
 <script>
     import ImgB64 from './components/atomic/ImgB64.svelte'
-    import { clickOutside, exportSelection } from './util.js'
-    import { fade } from 'svelte/transition';
     import Section from './components/Section.svelte';
     import { clusterStore } from './store'
+    import { exportData } from './util';
 
     let baseline = null;
     let augment = null;
@@ -70,6 +69,12 @@
             }
         }
         unSelectAll();
+    }
+
+    function deleteList(list) {
+        lists = lists.filter(l => l.id != list.id);
+        delete lidToName[list.id];
+        lidToName = lidToName;
     }
 
     function unSelectAll() {
@@ -147,6 +152,20 @@
         {#each lists as list (list.id)}
             <div class="my-14">
                 <h2 class="text-xl font-bold">{lidToName[list.id]}</h2>
+                <div class="flex w-1/3">
+                    <button 
+                        class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 
+                        on:click={() => exportData(list, lidToName[list.id])}
+                    >
+                        Export List
+                    </button>
+                    <button 
+                        class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 
+                        on:click={() => deleteList(list)}
+                    >
+                        Delete List
+                    </button>
+                </div>
                 <div class="flex flex-wrap justify-left p-2">
                     {#each list.images as img (img.idx)}
                         <div class="m-1">

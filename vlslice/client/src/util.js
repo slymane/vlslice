@@ -17,12 +17,11 @@ export function clickOutside(node) {
 	};
 }
 
-export function exportSelection(selected) {
-	let data = selected.map(i => i.iid)
+export function exportData(data, name) {
 	var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
 	var downloadAnchorNode = document.createElement('a');
 	downloadAnchorNode.setAttribute("href", dataStr);
-	downloadAnchorNode.setAttribute("download", "selected.json");
+	downloadAnchorNode.setAttribute("download", name + ".json");
 	downloadAnchorNode.click();
 	downloadAnchorNode.remove();
 }

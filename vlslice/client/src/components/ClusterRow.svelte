@@ -2,12 +2,16 @@
     import { slide } from 'svelte/transition';
     import SummaryBars from './SummaryBars.svelte';
     import ImgB64 from './atomic/ImgB64.svelte';
+    import { createEventDispatcher } from 'svelte';
 
     import { clusterStore } from '../store.js'
+    import { exportData } from '../util.js';
 
     const imgsNPreview = 12;
     const imgDispSize = 128;
+    const dispatch = createEventDispatcher();
 
+    export let name = "";
     export let cluster;
     export let scaleMean;
     export let scaleVariance;
@@ -33,6 +37,10 @@
         }
 
         $clusterStore = $clusterStore;
+    }
+
+    function deleteList() {
+        dispatch("delete");
     }
 
     function getSimilar() {
@@ -80,6 +88,15 @@
         <div class="flex flex-wrap justify-center">
             <button class="btn btn-xs btn-outline w-1/3 mx-2 my-1" on:click={selectAll}>Select All</button>
             <button class="btn btn-xs btn-outline w-1/3 mx-2 my-1" on:click={unselectAll}>Unselect All</button>
+            {#if cluster.isUserList}
+                <button 
+                    class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 
+                    on:click={() => exportData(cluster, name)}
+                >
+                    Export List
+                </button>
+                <button class="btn btn-xs btn-outline w-1/3 mx-2 my-1" on:click={deleteList}>Delete List</button>
+            {/if}
         </div>
     </div>
 
