@@ -7,6 +7,7 @@
 	import Section from './components/Section.svelte';
 	import { clusterStore, selectedStore } from './store.js';
 	import { clickOutside, exportSelection } from './util.js'
+    import { logicalHSlide } from "./transitions/hslide";
 
 	// Filtering variables
 	let enableFilter = true;
@@ -26,28 +27,14 @@
 	let filterVar;
 	let filterSize;
 
-	let hoveredList = null;
-	let selectedList = null;
+	let modalOpen = false;
+	let newListName = "";
+	let cidToName = {};
 
-	let selectedImagesToAdd = [];
-	let selectedImagesToRem = [];
-	$: {
-		selectedImagesToAdd = []; 
-		selectedImagesToRem = [];
-
-		for (let i = 0; i < $selectedStore.length; i++) {
-			let img = $selectedStore[i];
-
-			if (selectedList != null && selectedList.images.includes(img)) {
-				selectedImagesToRem.push(img);
-			} else {
-				selectedImagesToAdd.push(img);
-			}
-		}
-	}
 
 	function filter(e) {
 		enableFilter = false;
+		cidToName = {};
 	
 		// Fetch new clustering from the server
 		fetch('./filter', {
@@ -171,6 +158,7 @@
 			jsonData.isUserList = true;
 			jsonData.images = $selectedStore;
 
+			cidToName[jsonData.id] = newListName;
 			$clusterStore = [...$clusterStore, jsonData];
 		})
 		.then(function() {
@@ -183,20 +171,43 @@
 			scaleMean = scaleMean.range(range);
 			scaleVariance = scaleVariance.domain([0, vMax]).range(range);
 			scaleSize = scaleSize.domain([0, cMax]).range(range);
+
+			unSelectAll();
+			modalOpen = false;
 		});
 	}
 
-	function addSelection() {
+	function addSelection(cid) {
+		let selectedList = $clusterStore.filter(c => c.id == cid)[0]
+		let selectedImagesToAdd = [];
+		for (let i = 0; i < $selectedStore.length; i++) {
+			let img = $selectedStore[i];
+
+			if (~selectedList.images.includes(img)) {
+				selectedImagesToAdd.push(img);
+			}
+		}
+	
 		let update = [...new Set([...selectedList.images, ...selectedImagesToAdd])];
-		updateSelection(update);
+		updateSelection(selectedList, update);
 	}
 
-	function remSelection() {
+	function remSelection(cid) {
+		let selectedList = $clusterStore.filter(c => c.id == cid)[0]
+		let selectedImagesToRem = [];
+		for (let i = 0; i < $selectedStore.length; i++) {
+			let img = $selectedStore[i];
+
+			if (selectedList.images.includes(img)) {
+				selectedImagesToRem.push(img);
+			}
+		}
+	
 		let update = selectedList.images.filter(img => !selectedImagesToRem.includes(img));
-		updateSelection(update);
+		updateSelection(selectedList, update);
 	}
 
-	function updateSelection(updatedImages) {
+	function updateSelection(selectedList, updatedImages) {
 		fetch('./updateuserlist', {
 			method: 'POST',
 			headers: {'Content-Type': 'Application/json'},
@@ -222,6 +233,8 @@
 			scaleMean = scaleMean.range(range);
 			scaleVariance = scaleVariance.domain([0, vMax]).range(range);
 			scaleSize = scaleSize.domain([0, cMax]).range(range);
+
+			unSelectAll();
 		});
 	}
 
@@ -264,24 +277,14 @@
 
 <!-- USER CLUSTER DISPLAY -->
 <Section badge={nListsDisplayed}>
-    <span slot="title">Lists</span>
+    <span slot="title">Saved Lists</span>
     <svelte:fragment slot="content">
         {#each $clusterStore as cluster (cluster.id)}
             {#if cluster.isUserList && cluster.isDisplayed}
-                <div
-                    use:clickOutside
-                    on:mouseenter={() => hoveredList = cluster}
-                    on:mouseleave={() => hoveredList = null}
-                    on:click={() => selectedList = cluster}
-                    on:outclick={() => selectedList = null}
-					class="my-14"
-                    class:opacity-50={selectedList != null && selectedList != cluster}
-                    class:opacity-75={selectedList == null && hoveredList != null && hoveredList != cluster}
-                    class:shadow-lg={selectedList == cluster || hoveredList == cluster}
-                    style="transition: opacity 500ms;"
-                >
-                    <ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize} />
-                </div>
+				<div class="my-14">
+					<h2 class="text-xl font-bold">{cidToName[cluster.id]}</h2>
+					<ClusterRow {cluster} {scaleMean} {scaleVariance} {scaleSize} />
+				</div>
             {/if}
         {/each}
     </svelte:fragment>
@@ -300,48 +303,63 @@
 </Section>
 
 <!-- ABSOLUTE POSITION ITEMS -->
-{#if selectedList != null || $selectedStore.length > 0}
-    <div transition:fade class="fixed bottom-10 left-10 w-1/2">
-        {#if selectedList != null}
-            <button 
-                class="btn w-3/8"
-                class:btn-disabled={selectedImagesToAdd.length == 0}
-                on:click="{addSelection}"
-            >
-                    Add to list ({selectedImagesToAdd.length})
-            </button>
-
-            <button 
-                class="btn w-3/8"
-                class:btn-disabled={selectedImagesToRem.length == 0}
-                on:click="{remSelection}"
-            >
-                    Remove from list ({selectedImagesToRem.length})
-            </button>
-        {:else if $selectedStore.length > 0}
-            <button 
-                class="btn w-3/8" 
-                on:click={addNewList}
-            >
-                Add new list ({$selectedStore.length})
-            </button>
-        {/if}
-
-		<button 
-			class="btn w-1/8" 
+<div class="fixed flex items-center bottom-10 left-10 w-1/2">
+	<div 
+		class="dropdown dropdown-top"
+		class:dropdown-hover={$selectedStore.length > 0}
+	>
+		<!-- svelte-ignore a11y-label-has-associated-control -->
+		<label 
+			class="btn m-1"
 			class:btn-disabled={$selectedStore.length == 0}
-			on:click={() => exportSelection($selectedStore)}
 		>
-			Export Selection ({$selectedStore.length})
-		</button>
+			Add to List ({$selectedStore.length})
+		</label>
+		<ul class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 min-w-max">
+			<li>
+				<button on:click={() => {modalOpen = true; newListName = ""}}>
+					<i class="fa-solid fa-plus"></i>
+					Create a List
+				</button>
+			</li>
+			{#each Object.entries(cidToName) as [cid, name]}
+				<li><button onclick="this.blur();" on:click={() => addSelection(cid)}>{name}</button></li>
+			{/each}
+		</ul>
+	</div>
 
-        <button 
-            class="btn btn-error w-2/8" 
-            class:btn-disabled={$selectedStore.length == 0}
-            on:click="{unSelectAll}"
-        >
-            Clear
-        </button>
-    </div>
-{/if}
-	
+	<button 
+		class="btn" 
+		class:btn-disabled={$selectedStore.length == 0}
+		on:click="{unSelectAll}"
+	>
+		Clear Selection
+	</button>
+</div>
+
+<div class="modal" class:modal-open={modalOpen}>
+  <div class="modal-box relative">
+    <h3 class="text-lg font-bold">Create a new list</h3>
+	<input 
+		bind:value={newListName} 
+		type="text" 
+		placeholder="List name" 
+		class="input input-bordered w-full my-4 min-w-full"
+	/>
+	<div class="flex items-center justify-end">
+		<button 
+			class="btn m-1" 
+			on:click={() => modalOpen = false}
+		>
+			Cancel
+		</button>
+		<button 
+			class="btn btn-primary" 
+			class:btn-disabled={newListName == ""} 
+			on:click={addNewList}
+		>
+			Create List
+		</button>
+	</div>
+  </div>
+</div>

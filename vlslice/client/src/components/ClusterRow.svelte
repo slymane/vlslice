@@ -131,7 +131,7 @@
 
 {#if showSimilar}
     <div class="shadow-lg shadow-success w-9/10 p-8 mb-8" transition:slide>
-        <h1 class="text-success">Similar clusters...</h1>
+        <h3 class="text-lg text-success">Similar clusters...</h3>
         {#each similarClusters as cid}
             {@const similarCluster = $clusterStore.filter(c => c.id == cid)[0]}
             {#if cluster.id != cid}
@@ -143,7 +143,7 @@
 
 {#if showCounter}
     <div class="shadow-lg shadow-error w-9/10 p-8 mb-8" transition:slide>
-        <h1 class="text-error">Counterfactual clusters...</h1>
+        <h3 class="text-lg text-error">Counterfactual clusters...</h3>
         {#each counterClusters as cid}
             {@const counterCluster = $clusterStore.filter(c => c.id == cid)[0]}
             <svelte:self cluster={counterCluster} {scaleMean} {scaleVariance} {scaleSize}></svelte:self>

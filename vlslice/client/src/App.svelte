@@ -5,7 +5,7 @@
 	let useSimpleInterface = false;
 </script>
 
-<main class="max-w-none relative">
+<main class="max-w-none overflow-y-scroll relative">
 
 	<!-- TITLE/NAV BAR -->
 	<div class="navbar bg-neutral text-neutral-content flex justify-between">
