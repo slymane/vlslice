@@ -11,7 +11,13 @@
         </div>
         <div class="divider"></div>
     </div>
-    <div class="collapse-content"> 
+    <div class="collapse-content no-max-height"> 
         <slot name="content"/>
     </div>
 </div>
+
+<style>
+    .no-max-height {
+        max-height: none !important;
+    }
+</style>
