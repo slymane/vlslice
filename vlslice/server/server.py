@@ -251,12 +251,17 @@ def similar():
 
     intra_cluster_dist = {}
     for c2, r2 in session['df'].iterrows():
+
+        # If true, the user has already added images from this cluster and it is redundent to show.
+        if np.isin(r2.idxs, r1.idxs).any():
+            continue
+
         m2 = np.where(np.isin(session['topkidxs'], r2.idxs))[0]
         ca = cart([m1, m2])
         intra_cluster_dist[c2] = session['dist'][ca[0], ca[1]].mean()
 
     # Get top10 excluding the selected cluster
-    neighbors = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[1:11]
+    neighbors = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[1:21]
 
     json_data = {
         "neighbors": neighbors
@@ -275,6 +280,11 @@ def counter():
 
     intra_cluster_dist = {}
     for c2, r2 in session['df'].iterrows():
+
+        # If true, the user has already added images from this cluster and it is redundent to show.
+        if np.isin(r2.idxs, r1.idxs).any():
+            continue
+
         m2 = np.where(np.isin(session['topkidxs'], r2.idxs))[0]
         ca = cart([m1, m2])
         intra_cluster_dist[c2] = session['dist'][ca[0], ca[1]].mean()
@@ -282,12 +292,14 @@ def counter():
     # Get top10 excluding the selected cluster
     if np.sign(cluster['mean']) == -1:
         for key in session['df'][session['df']['mean'] < 0].reset_index().id:
-            intra_cluster_dist.pop(key)
+            if key in intra_cluster_dist:
+                intra_cluster_dist.pop(key)
     else:
         for key in session['df'][session['df']['mean'] > 0].reset_index().id:
-            intra_cluster_dist.pop(key)
+            if key in intra_cluster_dist:
+                intra_cluster_dist.pop(key)
 
-    counters = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[:10]
+    counters = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[:20]
 
     json_data = {
         "counters": counters
