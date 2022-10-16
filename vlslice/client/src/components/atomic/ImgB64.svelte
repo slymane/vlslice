@@ -34,7 +34,7 @@
 
     {#if deleteable}
         <div class="absolute top-1 left-1">
-            <button class="btn btn-xs btn-circle" on:click={() => dispatch("delete")}>
+            <button class="btn btn-circle btn-outline btn-xs " on:click={() => dispatch("delete")}>
                 <i class="fa-solid fa-close"></i>
             </button>
         </div>

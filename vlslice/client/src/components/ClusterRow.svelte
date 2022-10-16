@@ -39,7 +39,7 @@
         $clusterStore = $clusterStore;
     }
 
-    function getSimilar() {
+    function getSimilar(cluster) {
         if (showSimilar) {
             fetch('./similar', {
                 method: 'POST',
@@ -55,7 +55,7 @@
         }
     }
 
-    function getCounter() {
+    function getCounter(cluster) {
         if (showCounter) {
             fetch('./counter', {
                 method: 'POST',
@@ -66,10 +66,15 @@
             })
             .then(r => (r.json()))
             .then(function(jsonData) {
+                console.log(jsonData['counters']);
                 counterClusters = jsonData['counters'];
             })
         }
     }
+
+
+    $: getSimilar(cluster);
+    $: getCounter(cluster);
 
 </script>
 
@@ -146,7 +151,7 @@
                 type="checkbox" 
                 class="toggle mr-1" 
                 bind:checked={showSimilar} 
-                on:change={getSimilar}    
+                on:change={() => getSimilar(cluster)}    
             />
             <span class="label-text">Show Similar</span> 
         </label>
@@ -155,7 +160,7 @@
                 type="checkbox" 
                 class="toggle mr-1" 
                 bind:checked={showCounter} 
-                on:change={getCounter}
+                on:change={() => getCounter(cluster)}
             />
             <span class="label-text">Show Counterfactual</span> 
         </label>
