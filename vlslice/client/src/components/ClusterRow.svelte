@@ -39,10 +39,6 @@
         $clusterStore = $clusterStore;
     }
 
-    function deleteList() {
-        dispatch("delete");
-    }
-
     function getSimilar() {
         if (showSimilar) {
             fetch('./similar', {
@@ -95,7 +91,12 @@
                 >
                     Export List
                 </button>
-                <button class="btn btn-xs btn-outline w-1/3 mx-2 my-1" on:click={deleteList}>Delete List</button>
+                <button 
+                    class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 
+                    on:click={() => dispatch("deleteCluster")}
+                >
+                    Delete List
+                </button>
             {/if}
         </div>
     </div>
@@ -104,14 +105,29 @@
     <div class="col-span-5">
         <div class="grid grid-cols-12 gap-0.5 mb-px">
             {#each cluster.images.slice(0, imgsNPreview) as img (img.idx)}
-                <ImgB64 id={img.idx} path={img.iid} bind:selected={img.selected} size={imgDispSize}/>
+                <ImgB64 
+                    id={img.idx} 
+                    path={img.iid} 
+                    bind:selected={img.selected} 
+                    size={imgDispSize}
+                    deleteable={cluster.isUserList}
+                    on:delete={() => dispatch("deleteImage", {"image": img})}
+                />
             {/each}
         </div>
 
         {#if cluster.showMore}
             <div class="grid grid-cols-12 gap-0.5" transition:slide>
                 {#each cluster.images.slice(imgsNPreview, cluster.images.length) as img (img.idx)}
-                    <ImgB64 class="m-0" id={img.idx} path={img.iid} bind:selected={img.selected} size={imgDispSize}/>
+                    <ImgB64 
+                        class="m-0" 
+                        id={img.idx} 
+                        path={img.iid} 
+                        bind:selected={img.selected} 
+                        size={imgDispSize}
+                        deleteable={cluster.isUserList}
+                        on:delete={() => dispatch("deleteImage", {"image": img})}
+                    />
                 {/each}
             </div>
         {/if}

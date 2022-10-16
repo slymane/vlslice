@@ -1,11 +1,15 @@
 <script>
     import { clusterStore } from '../../store.js';
     import { useLazyImage as lazyImage } from 'svelte-lazy-image';
+    import { createEventDispatcher } from 'svelte';
 
     export let id;
     export let path;
     export let size;
     export let selected;
+    export let deleteable = false;
+
+    const dispatch = createEventDispatcher()
 
     function select() {
         selected = !selected;
@@ -13,17 +17,30 @@
     }
 </script>
 
-<img 
-    id="img-{id}" 
-    alt="Filtered dataset sample" 
-    on:click|stopPropagation="{select}" 
-    class="expand m-0" class:selected
-    data-src="http://d30mxw38m32j53.cloudfront.net/{path}" 
-    width="{size}" 
-    height="{size}"
-    style="cursor: pointer;"
-    use:lazyImage
-/>
+<div class="relative expand overflow-visible m-0">
+
+    <img 
+        id="img-{id}" 
+        alt="Filtered dataset sample" 
+        on:click|stopPropagation="{select}" 
+        class="relative"
+        class:selected
+        data-src="http://d30mxw38m32j53.cloudfront.net/{path}" 
+        width="{size}" 
+        height="{size}"
+        style="cursor: pointer;"
+        use:lazyImage
+    />
+
+    {#if deleteable}
+        <div class="absolute top-1 left-1">
+            <button class="btn btn-xs btn-circle" on:click={() => dispatch("delete")}>
+                <i class="fa-solid fa-close"></i>
+            </button>
+        </div>
+    {/if}
+
+</div>
 
 <style>
     .selected {
@@ -34,9 +51,11 @@
     .expand {
         transition: transform 100ms;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 0;
     }
 
     .expand:hover {
         transform: scale(2.0);
+        z-index: 1;
     }
 </style>

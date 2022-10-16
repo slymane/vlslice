@@ -52,23 +52,18 @@
         unSelectAll();
     }
 
-    function remSelection(id) {
-        let selectedList = lists.filter(l => l.id == id)[0];
-        let selectedImagesToRem = [];
-		for (let i = 0; i < selected.length; i++) {
-			let img = selected[i];
-
-			if (selectedList.images.includes(img)) {
-				selectedImagesToRem.push(img);
-			}
-		}
-
+    function remSelection(list, img) {
         for (let i = 0; i < lists.length; i++) {
-            if (lists[i].id == selectedList.id) {
-                lists[i].images = lists[i].images.filter(img => !selectedImagesToRem.includes(img));
+            if (lists[i].id == list.id) {
+                lists[i].images = lists[i].images.filter(i => i != img);
+
+                if (lists[i].images.length == 0) {
+                    deleteList(list);
+                }
             }
         }
-        unSelectAll();
+        lists = lists;
+        images = images;
     }
 
     function deleteList(list) {
@@ -169,7 +164,14 @@
                 <div class="flex flex-wrap justify-left p-2">
                     {#each list.images as img (img.idx)}
                         <div class="m-1">
-                            <ImgB64 id={img.idx} path={img.iid} bind:selected={img.selected} size={128}/>
+                            <ImgB64 
+                                id={img.idx} 
+                                path={img.iid} 
+                                bind:selected={img.selected} 
+                                size={128} 
+                                deleteable
+                                on:delete={() => remSelection(list, img)}
+                            />
                         </div>
                     {/each}
                 </div>
@@ -192,7 +194,7 @@
 </Section>
 
 <!-- ABSOLUTE POSITION ITEMS -->
-<div class="fixed flex items-center bottom-10 left-10 w-1/2">
+<div class="fixed flex items-center bottom-10 left-10 w-1/2 z-10">
 	<div 
 		class="dropdown dropdown-top"
 		class:dropdown-hover={selected.length > 0}

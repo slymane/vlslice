@@ -1661,6 +1661,12 @@ html {
 .btn-disabled, .btn[disabled] {
   pointer-events: none;
 }
+.btn-circle {
+  height: 3rem;
+  width: 3rem;
+  border-radius: 9999px;
+  padding: 0px;
+}
 .btn.loading, .btn.loading:hover {
   pointer-events: none;
 }
@@ -2984,6 +2990,24 @@ body[dir="rtl"] .checkbox:checked,
   border-radius: 9999px;
   padding: 0px;
 }
+.btn-circle:where(.btn-sm) {
+  height: 2rem;
+  width: 2rem;
+  border-radius: 9999px;
+  padding: 0px;
+}
+.btn-circle:where(.btn-md) {
+  height: 3rem;
+  width: 3rem;
+  border-radius: 9999px;
+  padding: 0px;
+}
+.btn-circle:where(.btn-lg) {
+  height: 4rem;
+  width: 4rem;
+  border-radius: 9999px;
+  padding: 0px;
+}
 .indicator :where(.indicator-item) {
   right: 0px;
   left: auto;
@@ -3064,6 +3088,9 @@ body[dir="rtl"] .checkbox:checked,
 .fixed {
   position: fixed;
 }
+.absolute {
+  position: absolute;
+}
 .relative {
   position: relative;
 }
@@ -3072,6 +3099,15 @@ body[dir="rtl"] .checkbox:checked,
 }
 .left-10 {
   left: 2.5rem;
+}
+.top-1 {
+  top: 0.25rem;
+}
+.left-1 {
+  left: 0.25rem;
+}
+.z-10 {
+  z-index: 10;
 }
 .col-span-2 {
   grid-column: span 2 / span 2;
@@ -3180,6 +3216,9 @@ body[dir="rtl"] .checkbox:checked,
 }
 .gap-0 {
   gap: 0px;
+}
+.overflow-visible {
+  overflow: visible;
 }
 .bg-neutral {
   --tw-bg-opacity: 1;

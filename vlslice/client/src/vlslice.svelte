@@ -28,7 +28,6 @@
 	let newListName = "";
 	let cidToName = {};
 
-
 	function filter(e) {
 		enableFilter = false;
 		cidToName = {};
@@ -197,19 +196,8 @@
 		updateSelection(selectedList, update);
 	}
 
-	function remSelection(cid) {
-		let selectedList = $clusterStore.filter(c => c.id == cid)[0]
-		let selectedImagesToRem = [];
-		for (let i = 0; i < $selectedStore.length; i++) {
-			let img = $selectedStore[i];
-
-			if (selectedList.images.includes(img)) {
-				selectedImagesToRem.push(img);
-			}
-		}
-	
-		let update = selectedList.images.filter(img => !selectedImagesToRem.includes(img));
-		updateSelection(selectedList, update);
+	function remSelection(list, img) {
+		updateSelection(list, list.images.filter(i => i != img));
 	}
 
 	function updateSelection(selectedList, updatedImages) {
@@ -289,9 +277,11 @@
 				<div class="my-14">
 					<h2 class="text-xl font-bold">{cidToName[cluster.id]}</h2>
 					<ClusterRow 
-						{cluster} name={cidToName[cluster.id]} 
-						{scaleMean} {scaleVariance} {scaleSize} 
-						on:delete={() => remList(cluster)}/>
+						{cluster} {scaleMean} {scaleVariance} {scaleSize} 
+						name={cidToName[cluster.id]} 
+						on:deleteCluster={() => remList(cluster)}
+						on:deleteImage={e => remSelection(cluster, e.detail.image)}
+					/>
 				</div>
             {/if}
         {/each}
@@ -311,7 +301,7 @@
 </Section>
 
 <!-- ABSOLUTE POSITION ITEMS -->
-<div class="fixed flex items-center bottom-10 left-10 w-1/2">
+<div class="fixed flex items-center bottom-10 left-10 w-1/2 z-10">
 	<div 
 		class="dropdown dropdown-top"
 		class:dropdown-hover={$selectedStore.length > 0}
