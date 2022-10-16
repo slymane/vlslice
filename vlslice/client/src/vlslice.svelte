@@ -19,6 +19,10 @@
 	let nClustersDisplayed = null;
 	let nListsDisplayed = null;
 
+	let baseline = "";
+	let augment = "";
+	let topk = 0;
+
 	// Filters
 	let filterMean;
 	let filterVar;
@@ -28,18 +32,45 @@
 	let newListName = "";
 	let cidToName = {};
 
+	export function snapshot() {
+		let listData = $clusterStore
+			.filter(c => c.isUserList)
+			.map(c => ({
+				"name": cidToName[c.id],
+				"images": c.images.map(i => i.iid)
+		}));
+
+		let workingSet = $clusterStore
+			.filter(c => !c.isUserList)
+			.map(c => c.images.map(i => i.iid))
+			.flat()
+	
+		return {
+			"interface": "VlSlice",
+			"baseline": baseline,
+			"augment": augment,
+			"topk": topk,
+			"lists": listData,
+			"working": workingSet
+		}
+	}
+
 	function filter(e) {
 		enableFilter = false;
 		cidToName = {};
+
+		baseline = e.detail.baseline;
+		augment = e.detail.augment;
+		topk = e.detail.topk;
 	
 		// Fetch new clustering from the server
 		fetch('./filter', {
 			method: 'POST',
 			headers: {'Content-Type': 'Application/json'},
 			body: JSON.stringify({
-				baseline: e.detail.baseline,
-				augment: e.detail.augment,
-				k: e.detail.topk,
+				baseline: baseline,
+				augment: augment,
+				k: topk,
 				w: 0.95,
 				dt: 0.18
 			})
@@ -301,7 +332,7 @@
 </Section>
 
 <!-- ABSOLUTE POSITION ITEMS -->
-<div class="fixed flex items-center bottom-10 left-10 w-1/2 z-10">
+<div class="fixed flex items-center bottom-14 left-14 w-1/2 z-10">
 	<div 
 		class="dropdown dropdown-top"
 		class:dropdown-hover={$selectedStore.length > 0}

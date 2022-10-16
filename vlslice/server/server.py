@@ -1,7 +1,6 @@
 import os
-import signal
-import sys
 import secrets
+import json
 
 from sklearnex import patch_sklearn
 patch_sklearn()
@@ -321,6 +320,23 @@ def textrank():
         json_data[c] = sims[m].mean().item()
 
     return jsonify(json_data)
+
+
+@app.route('/snapshot', methods=['POST'])
+def snapshot():
+    data = request.json
+    user_root = os.path.join('./snapshots', data["code"] + '/')
+    if not os.path.exists(user_root):
+        os.mkdir(user_root)
+
+    json_path = os.path.join(
+        user_root, 
+        f'{data["code"].lower()}_{data["baseline"].lower()}_{data["augment"].lower()}.json'
+    )
+    with open(json_path, 'w') as f:
+        f.write(json.dumps(request.json))
+
+    return jsonify({"status": "success"})
 
 
 # Path for main Svelte page

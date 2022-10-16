@@ -24,6 +24,23 @@
 
     $: selected = images.filter(i => i.selected)
 
+    export function snapshot() {
+        let listData = lists
+			.map(l => ({
+				"name": lidToName[l.id],
+				"images": l.images.map(i => i.iid)
+		}));
+    
+		return {
+            "interface": "Simple",
+			"baseline": baseline,
+			"augment": augment,
+			"topk": topk,
+            "lists": listData,
+            "working": images.map(i => i.iid)
+		}
+    }
+
     function addNewList() {
         lists = [...lists, {"id": lid, "images": selected}];
         lidToName[lid] = newListName;
@@ -194,7 +211,7 @@
 </Section>
 
 <!-- ABSOLUTE POSITION ITEMS -->
-<div class="fixed flex items-center bottom-10 left-10 w-1/2 z-10">
+<div class="fixed flex items-center bottom-14 left-14 w-1/2 z-10">
 	<div 
 		class="dropdown dropdown-top"
 		class:dropdown-hover={selected.length > 0}
