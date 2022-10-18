@@ -6,6 +6,7 @@
 
     import { clusterStore } from '../store.js'
     import { exportData } from '../util.js';
+    import Correlation from './Correlation.svelte'
 
     const imgsNPreview = 12;
     const imgDispSize = 128;
@@ -17,8 +18,15 @@
     export let scaleVariance;
     export let scaleSize;
 
+    export let baseline = "";
+    export let augment = "";
+    export let topk = 0;
+
     let showSimilar = false;
     let showCounter = false;
+    let showCorrelation = false;
+
+    let correlation;
 
     let similarClusters = [];
     let counterClusters = [];
@@ -164,6 +172,17 @@
             />
             <span class="label-text">Show Counterfactual</span> 
         </label>
+        {#if cluster.isUserList}
+            <label class="label cursor-pointer justify-start">
+                <input 
+                    type="checkbox" 
+                    class="toggle mr-1" 
+                    bind:checked={showCorrelation} 
+                    on:change={correlation.getCorrelation}
+                />
+                <span class="label-text">Show Correlation</span> 
+            </label>
+        {/if}
     </div>
 </div>
 
@@ -186,6 +205,14 @@
             {@const counterCluster = $clusterStore.filter(c => c.id == cid)[0]}
             <svelte:self cluster={counterCluster} {scaleMean} {scaleVariance} {scaleSize}></svelte:self>
         {/each}
+    </div>
+{/if}
+
+<!-- Dataset level correlation -->
+{#if showCorrelation}
+    <div class="shadow-lg w-9/10 p-8 mb-8" transition:slide>
+        <h3 class="text-lg">Correlation with {augment}...</h3>
+            <Correlation bind:this={correlation} {cluster} {augment}/>
     </div>
 {/if}
 

@@ -4,7 +4,6 @@
     export let signed = false;
     export let scale;
     export let value;
-
 </script>
 
 <g transform="translate({offsetX}, {offsetY})">

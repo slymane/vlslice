@@ -309,6 +309,7 @@
 					<h2 class="text-xl font-bold">{cidToName[cluster.id]}</h2>
 					<ClusterRow 
 						{cluster} {scaleMean} {scaleVariance} {scaleSize} 
+						{baseline} {augment} {topk}
 						name={cidToName[cluster.id]} 
 						on:deleteCluster={() => remList(cluster)}
 						on:deleteImage={e => remSelection(cluster, e.detail.image)}

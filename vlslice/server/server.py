@@ -330,13 +330,34 @@ def snapshot():
         os.mkdir(user_root)
 
     json_path = os.path.join(
-        user_root, 
+        user_root,
         f'{data["code"].lower()}_{data["baseline"].lower()}_{data["augment"].lower()}.json'
     )
     with open(json_path, 'w') as f:
         f.write(json.dumps(request.json))
 
     return jsonify({"status": "success"})
+
+
+@app.route('/correlation', methods=['POST'])
+def correlation():
+    cluster = request.json['cluster']
+    c1 = cluster['id']
+    r1 = session['df'].loc[c1]
+    m1 = np.where(np.isin(session['topkidxs'], r1.idxs))[0]
+
+    # all images X cluster similarity
+    centroid = session['topkembs'][m1].mean(axis=0, keepdims=True)
+    sim = clip_sim(session['topkembs'], centroid).squeeze()
+
+    data = [{
+        "image": f"http://d30mxw38m32j53.cloudfront.net/{i.item()}",
+        "sim": c.item(),
+        "dcs": d.item(),
+        "is_member": idx in m1
+    } for idx, (i, c, d) in enumerate(zip(session["topkiids"], sim, session["topkdc"]))]
+
+    return jsonify(data)
 
 
 # Path for main Svelte page
