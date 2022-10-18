@@ -168,7 +168,7 @@ def filter():
 
         assert len(idx) == len(iid)
 
-        pd_data.append([str(c), c_mean, c_var, len(idx), idx])
+        pd_data.append([str(c), c_mean.item(), c_var.item(), len(idx), idx.tolist()])
 
         json_data.append({
             'id': str(c.item()),
@@ -197,7 +197,7 @@ def userlist():
     c_mean = dc.mean()
     c_var = dc.var().clip(min=0.0)
 
-    df = pd.DataFrame([[c, c_mean, c_var, len(idx), idx]], 
+    df = pd.DataFrame([[c, c_mean.item(), c_var.item(), len(idx), idx.tolist()]],
                       columns=['id', 'mean', 'var', 'size', 'idxs']).set_index('id')
     session['df'] = pd.concat([session['df'], df])
 
@@ -228,7 +228,7 @@ def updateuserlist():
     c_mean = dc.mean()
     c_var = dc.var().clip(min=0.0)
 
-    session['df'].loc[c] = [c_mean, c_var, len(idx), idx]
+    session['df'].loc[c] = [c_mean.item(), c_var.item(), len(idx), idx.tolist()]
 
     json_data = {
         'id': c,

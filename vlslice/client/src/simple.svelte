@@ -164,7 +164,7 @@
         {#each lists as list (list.id)}
             <div class="my-14">
                 <h2 class="text-xl font-bold">{lidToName[list.id]}</h2>
-                <div class="flex w-1/3">
+                <div class="flex w-1/4">
                     <button 
                         class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 
                         on:click={() => exportData(list, lidToName[list.id])}
