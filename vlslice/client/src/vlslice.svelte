@@ -19,6 +19,7 @@
 	let nClustersDisplayed = null;
 	let nListsDisplayed = null;
 
+	let sortText = "";
 	let baseline = "";
 	let augment = "";
 	let topk = 0;
@@ -131,11 +132,26 @@
 			clusters.reverse();
 		}
 
+		if (e.detail.sortText == null) {
+			e.detail.sortText = "";
+		}
+
+		if (e.detail.sortKey != "text" && e.detail.sortReverse) {
+			sortText = `More "${augment}" → Less "${augment}"`;
+		} else if (e.detail.sortKey != "text" && !e.detail.sortReverse) {
+			sortText = `Less "${augment}" → More "${augment}"`;
+		} else if (e.detail.sortKey == "text" && e.detail.sortReverse) {
+			sortText = `More "${e.detail.sortText}" → Less "${e.detail.sortText}"`;
+		} else if (e.detail.sortKey == "text" && !e.detail.sortReverse) {
+			sortText = `Less "${e.detail.sortText}" → More "${e.detail.sortText}"`;
+		}
+
 		return clusters;
 	}
 
 	function reverseClusters(e) {
-		clusterStore.update(v => v.reverse())
+		sortText = sortText.split('→').reverse().join('→');
+		clusterStore.update(v => v.reverse());
 	}
 
 	function isBounded(x, low, high) {
@@ -308,8 +324,7 @@
 				<div class="my-14">
 					<h2 class="text-xl font-bold">{cidToName[cluster.id]}</h2>
 					<ClusterRow 
-						{cluster} {scaleMean} {scaleVariance} {scaleSize} 
-						{baseline} {augment} {topk}
+						{cluster} {scaleMean} {scaleVariance} {scaleSize} {baseline} {augment}
 						name={cidToName[cluster.id]} 
 						on:deleteCluster={() => remList(cluster)}
 						on:deleteImage={e => remSelection(cluster, e.detail.image)}
@@ -322,7 +337,7 @@
 
 <!-- GENERATED CLUSTER DISPLAY -->
 <Section badge={nClustersDisplayed}>
-    <span slot="title">Clusters</span>
+    <span slot="title">Clusters {#if $clusterStore.length > 0}({sortText}){/if}</span>
     <svelte:fragment slot="content">
         {#each $clusterStore as cluster (cluster.id)}
             {#if !cluster.isUserList && cluster.isDisplayed}
@@ -342,6 +357,7 @@
 		<label 
 			class="btn m-1"
 			class:btn-disabled={$selectedStore.length == 0}
+			on:click={() => {modalOpen = true; newListName = ""}}
 		>
 			Add to List ({$selectedStore.length})
 		</label>

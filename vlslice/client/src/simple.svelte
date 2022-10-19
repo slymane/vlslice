@@ -51,7 +51,6 @@
 
     function addSelection(id) {
         let selectedList = lists.filter(l => l.id == id)[0];
-        console.log(selectedList);
         let selectedImagesToAdd = [];
 		for (let i = 0; i < selected.length; i++) {
 			let img = selected[i];
@@ -198,7 +197,7 @@
 </Section>
 
 <Section badge={images.length}>
-    <span slot="title">Images</span>
+    <span slot="title">Images {#if images.length > 0}(More {augment} → Less {augment}){/if}</span>
     <svelte:fragment slot="content">
         <div class="flex flex-wrap justify-center">
             {#each images as img (img.idx)}
@@ -220,6 +219,7 @@
 		<label 
 			class="btn m-1"
 			class:btn-disabled={selected.length == 0}
+            on:click={() => {modalOpen = true; newListName = ""}}
 		>
 			Add to List ({selected.length})
 		</label>

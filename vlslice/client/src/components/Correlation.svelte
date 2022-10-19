@@ -1,9 +1,11 @@
 <script>
     export let cluster;
+    export let name;
+    export let baseline;
     export let augment;
     const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
 
-    export function getCorrelation() {
+    export function getCorrelation(cluster) {
         fetch('./correlation', {
                 method: 'POST',
                 headers: {'Content-Type': 'Application/json'},
@@ -13,8 +15,9 @@
         })
         .then(r => (r.json()))
         .then(function(jsonData) {
-            console.log(jsonData);
-
+            for (let i = 0; i < jsonData.length; i++) {
+                jsonData[i].is_member = jsonData[i].is_member ? `In "${name}"` : `Not In "${name}"`;
+            }
             let x = jsonData.map(sample => sample["sim"]);
 
             let spec = {
@@ -26,7 +29,7 @@
                 mark: "point",
                 encoding: {
                     x: {
-                        axis: {title: "List Similarity"},
+                        axis: {title: `Less "${name}" → More "${name}"`},
                         field: "sim", 
                         type: "quantitative", 
                         scale: {
@@ -34,7 +37,7 @@
                         }
                     },
                     y: {
-                        axis: {title: `\"${augment}\" Affinity`},
+                        axis: {title: `"${baseline}" → "${augment}"`},
                         field: "dcs", 
                         type: "quantitative",
                         scale: {
@@ -42,9 +45,10 @@
                         }
                     },
                     color: {
-                        axis: {title: "List Member"},
+                        axis: {title: "List Membership"},
                         field: "is_member", 
-                        type: "nominal"
+                        type: "nominal",
+                        scale: {range: ["green", "gray"]}
                     },
                     tooltip: [{"field": "image"}]
                 }
@@ -52,6 +56,8 @@
             vegaEmbed('#correlation', spec, {'actions': false});
         });
     }
+
+    $: getCorrelation(cluster)
 
 </script>
 

@@ -76,7 +76,7 @@
     <!-- Filter to TopK -->
     <div class="w-full max-w-xs">
         <label class="label" for="filter-topk" >
-            <span class="label-text">TopK</span>
+            <span class="label-text">Number Images</span>
         </label>
         <div id="filter-topk" class="input-group">
             <input class="input input-bordered w-full" type="number" placeholder="1000" min="2" bind:value={topk}/>
@@ -94,10 +94,10 @@
         </label>
         <div id="sort" class="input-group">
             <select class="select select-bordered" bind:value={sortKey} on:change={sortClusters}>
-                <option value="mean" selected>DC Mean</option>
-                <option value="variance">DC Variance</option>
-                <option value="size">Cluster Size</option>
-                <option value="text">Text Similarity</option>
+                <option value="mean" selected>Augmented text similarity</option>
+                <!--<option value="variance">DC Variance</option>-->
+                <!--<option value="size">Cluster Size</option>-->
+                <option value="text">Custom text similarity</option>
             </select>
 
             {#if sortKey == "text"}
@@ -107,7 +107,7 @@
                     type="text" 
                     placeholder="Search text..."
                     bind:value={sortText}
-                    on:input={sortClusters}
+                    on:keydown={(e) => {if (e.key == 'Enter') {sortClusters()}}}
                 />
             {/if}
 

@@ -260,7 +260,7 @@ def similar():
         intra_cluster_dist[c2] = session['dist'][ca[0], ca[1]].mean()
 
     # Get top10 excluding the selected cluster
-    neighbors = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[1:21]
+    neighbors = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[1:41]
 
     json_data = {
         "neighbors": neighbors
@@ -298,7 +298,7 @@ def counter():
             if key in intra_cluster_dist:
                 intra_cluster_dist.pop(key)
 
-    counters = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[:20]
+    counters = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[:40]
 
     json_data = {
         "counters": counters
@@ -373,4 +373,4 @@ def home(path):
 
 
 if __name__ == '__main__':
-    app.run(host=cfg['flask']['host'], port=5000, debug=True)
+    app.run(host=cfg['flask']['host'], port=cfg['flask']['port'], debug=cfg['dev'])

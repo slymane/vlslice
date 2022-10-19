@@ -12,7 +12,6 @@
 	let code = "";
 
 	function snapshot() {
-		console.log("Taking snapshot")
 		let data = useSimpleInterface ? si.snapshot() : vls.snapshot();
 		data["code"] = code;
 

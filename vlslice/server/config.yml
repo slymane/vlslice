@@ -1,8 +1,9 @@
 flask:
   host: 0.0.0.0
+  port: 5001
 data:
   hpc_path: /nfs/hpc/sw_data/slymane/
-  aws_path: /users/ubuntu/data/
+  aws_path: /home/ubuntu/data/
   exclude_classes:
     - human eye
     - human skull
@@ -20,6 +21,10 @@ data:
     - human body
     - tire
     - wheel
+    - window
+    - door
+    - door handle
+    - vehicle registration plate
 model:
   version: openai/clip-vit-base-patch16
   device: cpu

@@ -17,10 +17,10 @@
     export let scaleMean;
     export let scaleVariance;
     export let scaleSize;
+    export let disableShow = false;
 
     export let baseline = "";
     export let augment = "";
-    export let topk = 0;
 
     let showSimilar = false;
     let showCounter = false;
@@ -74,7 +74,6 @@
             })
             .then(r => (r.json()))
             .then(function(jsonData) {
-                console.log(jsonData['counters']);
                 counterClusters = jsonData['counters'];
             })
         }
@@ -86,6 +85,7 @@
 
 </script>
 
+<div class="bbottom">
 <div class="grid grid-cols-8 p-2">
     <!-- Summary -->
     <div class="col-span-2 cluster-summary">
@@ -154,57 +154,66 @@
             <span class="label-text" class:disable-span="{cluster.images.length <= 12 ? 'hsl(var(--b3))' : ''}">
                 Show More</span> 
         </label>
-        <label disabled class="label cursor-pointer justify-start">
-            <input 
-                type="checkbox" 
-                class="toggle mr-1" 
-                bind:checked={showSimilar} 
-                on:change={() => getSimilar(cluster)}    
-            />
-            <span class="label-text">Show Similar</span> 
-        </label>
-        <label class="label cursor-pointer justify-start">
-            <input 
-                type="checkbox" 
-                class="toggle mr-1" 
-                bind:checked={showCounter} 
-                on:change={() => getCounter(cluster)}
-            />
-            <span class="label-text">Show Counterfactual</span> 
-        </label>
-        {#if cluster.isUserList}
+
+        {#if !disableShow}
+            <label disabled class="label cursor-pointer justify-start">
+                <input
+                    type="checkbox"
+                    class="toggle mr-1"
+                    bind:checked={showSimilar}
+                    on:change={() => getSimilar(cluster)}
+                />
+                <span class="label-text">Show Similar</span>
+            </label>
             <label class="label cursor-pointer justify-start">
                 <input 
-                    type="checkbox" 
-                    class="toggle mr-1" 
-                    bind:checked={showCorrelation} 
-                    on:change={correlation.getCorrelation}
+                    type="checkbox"
+                    class="toggle mr-1"
+                    bind:checked={showCounter}
+                    on:change={() => getCounter(cluster)}
                 />
-                <span class="label-text">Show Correlation</span> 
+                <span class="label-text">Show Counterfactual</span>
             </label>
+            {#if cluster.isUserList}
+                <label class="label cursor-pointer justify-start">
+                    <input 
+                        type="checkbox"
+                        class="toggle mr-1"
+                        bind:checked={showCorrelation}
+                        on:change={correlation.getCorrelation(cluster)}
+                    />
+                    <span class="label-text">Show Correlation</span> 
+                </label>
+            {/if}
         {/if}
     </div>
 </div>
 
 {#if showSimilar}
-    <div class="shadow-lg shadow-success w-9/10 p-8 mb-8" transition:slide>
-        <h3 class="text-lg text-success">Similar clusters...</h3>
-        {#each similarClusters as cid}
-            {@const similarCluster = $clusterStore.filter(c => c.id == cid)[0]}
-            {#if cluster.id != cid}
-                <svelte:self cluster={similarCluster} {scaleMean} {scaleVariance} {scaleSize}></svelte:self>
-            {/if}
-        {/each}
+    <div class="shadow-lg shadow-info w-9/10 p-8 mb-8" transition:slide>
+        <h3 class="text-lg text-info mb-2">Similar clusters...</h3>
+
+        <div style="max-height: 500px;" class="overflow-y-scroll">
+            {#each similarClusters as cid}
+                {@const similarCluster = $clusterStore.filter(c => c.id == cid)[0]}
+                {#if cluster.id != cid}
+                    <svelte:self cluster={similarCluster} {scaleMean} {scaleVariance} {scaleSize} disableShow></svelte:self>
+                {/if}
+            {/each}
+        </div>
     </div>
 {/if}
 
 {#if showCounter}
-    <div class="shadow-lg shadow-error w-9/10 p-8 mb-8" transition:slide>
-        <h3 class="text-lg text-error">Counterfactual clusters...</h3>
-        {#each counterClusters as cid}
-            {@const counterCluster = $clusterStore.filter(c => c.id == cid)[0]}
-            <svelte:self cluster={counterCluster} {scaleMean} {scaleVariance} {scaleSize}></svelte:self>
-        {/each}
+    <div class="shadow-lg shadow-info w-9/10 p-8 mb-8" transition:slide>
+        <h3 class="text-lg text-info mb-2">Counterfactual clusters...</h3>
+
+        <div style="max-height: 500px;" class="overflow-y-scroll">
+            {#each counterClusters as cid}
+                {@const counterCluster = $clusterStore.filter(c => c.id == cid)[0]}
+                <svelte:self cluster={counterCluster} {scaleMean} {scaleVariance} {scaleSize} disableShow></svelte:self>
+            {/each}
+        </div>
     </div>
 {/if}
 
@@ -212,11 +221,19 @@
 {#if showCorrelation}
     <div class="shadow-lg w-9/10 p-8 mb-8" transition:slide>
         <h3 class="text-lg">Correlation with {augment}...</h3>
-            <Correlation bind:this={correlation} {cluster} {augment}/>
+            <Correlation bind:this={correlation} {cluster} {name} {baseline} {augment}/>
     </div>
 {/if}
 
+</div>
+
 <style>
+
+    .bbottom {
+        border-bottom-width: 1px;
+        border-color: hsl(var(--b3))
+    }
+
 	.cluster-summary {
 		display: flex;
 		flex-direction: column;
