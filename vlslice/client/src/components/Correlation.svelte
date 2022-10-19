@@ -1,9 +1,13 @@
 <script>
+    import { createEventDispatcher } from 'svelte';
+
     export let cluster;
     export let name;
     export let baseline;
     export let augment;
+
     const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
+    const dispatch = createEventDispatcher();
 
     export function getCorrelation(cluster) {
         fetch('./correlation', {
@@ -53,7 +57,14 @@
                     tooltip: [{"field": "image"}]
                 }
             }
-            vegaEmbed('#correlation', spec, {'actions': false});
+            vegaEmbed('#correlation', spec, {'actions': false}).then(function(result) {
+                result.view.addEventListener('click', function(event, item) {
+                    if (item.hasOwnProperty("datum")) {
+                        console.log(item.datum.is_member.slice(0, 2) == "In" ? "delete" : "add");
+                        item.datum.is_member.slice(0, 2) == "In" ? dispatch("delete", item.datum) : dispatch("add", item.datum);
+                    }
+                });
+            });
         });
     }
 

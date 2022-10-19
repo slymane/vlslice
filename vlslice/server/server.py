@@ -352,6 +352,7 @@ def correlation():
 
     data = [{
         "image": f"http://d30mxw38m32j53.cloudfront.net/{i.item()}",
+        "iid": i.item(),
         "sim": c.item(),
         "dcs": d.item(),
         "is_member": idx in m1

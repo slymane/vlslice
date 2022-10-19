@@ -5,6 +5,8 @@
 	import Toolbar from './components/Toolbar.svelte';
 	import Section from './components/Section.svelte';
 	import { clusterStore, selectedStore } from './store.js';
+    import { cluster } from "d3";
+    import { detach } from "svelte/internal";
 
 	// Filtering variables
 	let enableFilter = true;
@@ -243,8 +245,37 @@
 		updateSelection(selectedList, update);
 	}
 
+	function addImage(list, image) {
+		for (let i = 0; i < $clusterStore.length; i++) {
+			for (let j = 0; j < $clusterStore[i].images.length; j++) {
+				let img = $clusterStore[i].images[j];
+				if (img.iid == image.iid) {
+					let update = [...new Set([...list.images, img])];
+					updateSelection(list, update);
+					break;
+				}
+			}
+		}
+	}
+
+	function remImage(list, image) {
+		for (let i = 0; i < $clusterStore.length; i++) {
+			for (let j = 0; j < $clusterStore[i].images.length; j++) {
+				let img = $clusterStore[i].images[j];
+				if (img.iid == image.iid) {
+					remSelection(list, img);
+					break;
+				}
+			}
+		}
+	}
+
 	function remSelection(list, img) {
-		updateSelection(list, list.images.filter(i => i != img));
+		if (list.images.length == 1) {
+			remList(list);
+		} else {
+			updateSelection(list, list.images.filter(i => i != img));
+		}
 	}
 
 	function updateSelection(selectedList, updatedImages) {
@@ -327,7 +358,8 @@
 						{cluster} {scaleMean} {scaleVariance} {scaleSize} {baseline} {augment}
 						name={cidToName[cluster.id]} 
 						on:deleteCluster={() => remList(cluster)}
-						on:deleteImage={e => remSelection(cluster, e.detail.image)}
+						on:addImage={e => addImage(cluster, e.detail.image)}
+						on:deleteImage={e => remImage(cluster, e.detail.image)}
 					/>
 				</div>
             {/if}
