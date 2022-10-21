@@ -7,6 +7,7 @@
     import { clusterStore } from '../store.js'
     import { exportData } from '../util.js';
     import Correlation from './Correlation.svelte'
+    import { logicalHSlide } from '../transitions/hslide';
 
     const imgsNPreview = 12;
     const imgDispSize = 128;
@@ -196,7 +197,7 @@
         <div style="max-height: 500px;" class="overflow-y-scroll">
             {#each similarClusters as cid}
                 {@const similarCluster = $clusterStore.filter(c => c.id == cid)[0]}
-                {#if cluster.id != cid}
+                {#if cluster.id != cid && !similarCluster.isUserList}
                     <svelte:self cluster={similarCluster} {scaleMean} {scaleVariance} {scaleSize} disableShow></svelte:self>
                 {/if}
             {/each}
@@ -211,7 +212,9 @@
         <div style="max-height: 500px;" class="overflow-y-scroll">
             {#each counterClusters as cid}
                 {@const counterCluster = $clusterStore.filter(c => c.id == cid)[0]}
-                <svelte:self cluster={counterCluster} {scaleMean} {scaleVariance} {scaleSize} disableShow></svelte:self>
+                {#if !counterCluster.isUserList}
+                    <svelte:self cluster={counterCluster} {scaleMean} {scaleVariance} {scaleSize} disableShow></svelte:self>
+                {/if}
             {/each}
         </div>
     </div>
