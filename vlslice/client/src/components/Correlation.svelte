@@ -6,7 +6,7 @@
     export let baseline;
     export let augment;
 
-    $: id = name.replace(" ", "-");
+    $: id = name.replaceAll(" ", "-");
 
     const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
     const dispatch = createEventDispatcher();
