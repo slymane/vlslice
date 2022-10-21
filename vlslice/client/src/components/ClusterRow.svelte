@@ -220,7 +220,7 @@
 <!-- Dataset level correlation -->
 {#if showCorrelation}
     <div class="shadow-lg w-9/10 p-8 mb-8" transition:slide>
-        <h3 class="text-lg">Correlation with {augment}...</h3>
+        <h3 class="text-lg">Correlation with "{augment}"...</h3>
             <Correlation 
                 bind:this={correlation} 
                 {cluster} {name} {baseline} {augment}

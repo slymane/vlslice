@@ -6,6 +6,8 @@
     export let baseline;
     export let augment;
 
+    $: id = name.replace(" ", "-");
+
     const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
     const dispatch = createEventDispatcher();
 
@@ -30,34 +32,54 @@
                 width: 0.8 * vw,
                 height: 250,
                 data: {values: jsonData},
-                mark: "point",
-                encoding: {
-                    x: {
-                        axis: {title: `Less "${name}" → More "${name}"`},
-                        field: "sim", 
-                        type: "quantitative", 
-                        scale: {
-                            domain: [Math.min(...x), Math.max(...x)]
+                layer: [
+                    {mark: "point",
+                    encoding: {
+                        x: {
+                            axis: {title: `Less "${name}" → More "${name}"`},
+                            field: "sim", 
+                            type: "quantitative", 
+                            scale: {
+                                domain: [Math.min(...x), Math.max(...x)]
+                            }
+                        },
+                        y: {
+                            axis: {title: `"${baseline}" → "${augment}"`},
+                            field: "dcs", 
+                            type: "quantitative",
+                            scale: {
+                                domain: [-1, 1]
+                            }
+                        },
+                        color: {
+                            axis: {title: "List Membership"},
+                            field: "is_member", 
+                            type: "nominal",
+                            scale: {range: ["green", "gray"]}
+                        },
+                        tooltip: [{"field": "image"}]
+                    }},
+                    {mark: {
+                        type: "line",
+                        color: "blue"
+                    },
+                    transform: [{
+                        regression: "dcs",
+                        on: "sim"
+                    }],
+                    encoding: {
+                        x: {
+                            field: "sim",
+                            type: "quantitative"
+                        },
+                        y: {
+                            field: "dcs",
+                            type: "quantitative"
                         }
-                    },
-                    y: {
-                        axis: {title: `"${baseline}" → "${augment}"`},
-                        field: "dcs", 
-                        type: "quantitative",
-                        scale: {
-                            domain: [-1, 1]
-                        }
-                    },
-                    color: {
-                        axis: {title: "List Membership"},
-                        field: "is_member", 
-                        type: "nominal",
-                        scale: {range: ["green", "gray"]}
-                    },
-                    tooltip: [{"field": "image"}]
-                }
+                    }}
+                ]
             }
-            vegaEmbed('#correlation', spec, {'actions': false}).then(function(result) {
+            vegaEmbed(`#correlation-${id}`, spec, {'actions': false}).then(function(result) {
                 result.view.addEventListener('click', function(event, item) {
                     if (item.hasOwnProperty("datum")) {
                         console.log(item.datum.is_member.slice(0, 2) == "In" ? "delete" : "add");
@@ -72,7 +94,7 @@
 
 </script>
 
-<div id='correlation'></div>
+<div id='correlation-{id}'></div>
 
 <style>
 

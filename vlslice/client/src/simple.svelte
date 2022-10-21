@@ -197,7 +197,7 @@
 </Section>
 
 <Section badge={images.length}>
-    <span slot="title">Images {#if images.length > 0}(More {augment} → Less {augment}){/if}</span>
+    <span slot="title">Images {#if images.length > 0}(More "{augment}" → Less "{augment}"){/if}</span>
     <svelte:fragment slot="content">
         <div class="flex flex-wrap justify-center">
             {#each images as img (img.idx)}
