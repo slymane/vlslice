@@ -353,7 +353,14 @@
         {#each $clusterStore as cluster (cluster.id)}
             {#if cluster.isUserList && cluster.isDisplayed}
 				<div class="my-14">
-					<h2 class="text-xl font-bold">{cidToName[cluster.id]}</h2>
+					<h2 class="text-xl font-bold">
+						<input 
+							type="text" 
+							class="input input-ghost input-lg w-full max-w-md"
+							style="font-weight: bold !important"
+							bind:value={cidToName[cluster.id]}
+						/>
+					</h2>
 					<ClusterRow 
 						{cluster} {scaleMean} {scaleVariance} {scaleSize} {baseline} {augment}
 						name={cidToName[cluster.id]} 

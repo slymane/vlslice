@@ -162,7 +162,14 @@
     <svelte:fragment slot="content">
         {#each lists as list (list.id)}
             <div class="my-14">
-                <h2 class="text-xl font-bold">{lidToName[list.id]}</h2>
+                <h2 class="text-xl font-bold mb-1">
+                    <input 
+                        type="text" 
+                        class="input input-ghost input-lg w-full max-w-md"
+                        style="font-weight: bold !important"
+                        bind:value={lidToName[list.id]}
+                    />
+                </h2>
                 <div class="flex w-1/4">
                     <button 
                         class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 

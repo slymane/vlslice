@@ -7,7 +7,6 @@
     import { clusterStore } from '../store.js'
     import { exportData } from '../util.js';
     import Correlation from './Correlation.svelte'
-    import { logicalHSlide } from '../transitions/hslide';
 
     const imgsNPreview = 12;
     const imgDispSize = 128;
