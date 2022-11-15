@@ -56,13 +56,13 @@ if cfg['dev']:
     embs = np.load(os.path.join(root, "embs_dev.npy"))
     lbls = np.char.decode(np.load(os.path.join(root, "lbls_dev.npy")))
     iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
-    print("Loading dev embeddings... Done.")
+    print(f"Loading dev embeddings... Done. ({embs.shape})")
 else:
     print("Loading all embeddings...", end='\r')
     embs = np.load(os.path.join(root, "embs_all.npy"))
     lbls = np.char.decode(np.load(os.path.join(root, "lbls_all.npy")))
     iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
-    print("Loading all embeddings... Done.")
+    print(f"Loading all embeddings... Done. ({embs.shape})")
 
 filt = ~np.isin(lbls, cfg['data']['exclude_classes'])
 iids = iids[filt]
@@ -139,7 +139,11 @@ def filter():
     session['topkdc'] = delta_c(session['topksims'])
 
     # Get distances
-    dist_embs = (1 - np.matmul(session['topkembs'], session['topkembs'].transpose())).clip(0.0, 1.0)
+    # Original used:
+    # dist_embs = (1 - np.matmul(session['topkembs'], session['topkembs'].transpose())).clip(0.0, 1.0)
+    # Incorrect for cosine sim, but the ranges clip outputs happens to be equivalent to 2 * correct version below.
+    dist_embs = (np.matmul(session['topkembs'], session['topkembs'].transpose()) + 1) / 2
+    dist_embs = (2 * (1 - dist_embs)).clip(0.0, 1.0)
     dist_dc = sklearn.metrics.pairwise.euclidean_distances((session['topkdc'].reshape(-1, 1) + 1) / 2)
     session['dist'] = w * dist_embs + (1 - w) * dist_dc
 

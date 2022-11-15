@@ -144,7 +144,7 @@
     <!-- Filter to TopK -->
     <div class="w-full max-w-xs">
         <label class="label" for="filter-topk" >
-            <span class="label-text">TopK</span>
+            <span class="label-text">Number Images</span>
         </label>
         <div id="filter-topk" class="input-group">
             <input class="input input-bordered w-full" type="number" placeholder="1000" min="2" bind:value={topk}/>
