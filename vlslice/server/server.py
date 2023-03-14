@@ -1,6 +1,8 @@
 import os
 import secrets
 import json
+import time
+import yaml
 
 from sklearnex import patch_sklearn
 patch_sklearn()
@@ -12,11 +14,6 @@ import pandas as pd
 from scipy import stats
 import sklearn
 from sklearn import cluster
-import yaml
-import time
-
-# TODO: Gross
-import time
 
 from model import load_model, clip_sim, delta_c
 from utils import cart
@@ -39,18 +36,8 @@ gserv = {
     'model': None
 }
 
-# CLIENT CONTEXT
-# session['topk']
-# session['topkidxs']
-# session['topkembs']
-# session['topksims']
-# session['topkdc']
-# session['clusters']
-# session['df']
-# session['dist']
-
 # SERVER SETUP
-root = cfg['data']['hpc_path'] if 'oregonstate' in os.uname()[1] else cfg['data']['aws_path']
+root = cfg['data']['path']
 if cfg['dev']:
     print("Loading dev embeddings...", end='\r')
     embs = np.load(os.path.join(root, "embs_dev.npy"))
@@ -76,38 +63,6 @@ gserv['data'] = {
 
 # Load model
 gserv['model'] = load_model(**cfg['model'])
-
-
-# Request ranked images for simple interface
-@app.route('/simple', methods=['POST'])
-def simple():
-    # Parse request
-    baseline = request.json['baseline']  # Basleline text caption
-    augment = request.json['augment']    # Augmented text caption
-    k = request.json['k']                # Topk results to filter
-
-    # Embed text captions
-    txt_embs = gserv['model'](txt=[baseline, augment])
-    sim = clip_sim(txt_embs, gserv['data']['imgs_emb'])
-
-    # Get topk images above baseline
-    topk = np.argsort(sim[:, 0])[-k:]
-    sim = sim[topk]
-    idx = gserv['data']['imgs_idx'][topk]
-    iid = gserv['data']['imgs_iid'][topk]
-
-    # Rank images by similarity with augment
-    tops = np.argsort(sim[:, 1])[::-1]
-    idx = idx[tops]
-    iid = iid[tops]
-
-    images = [{
-        'idx': ix.item(),
-        'iid': ii.item(),
-        'selected': False
-    } for ix, ii in zip(idx, iid)]
-
-    return jsonify(images)
 
 
 # Filter to working set
@@ -157,7 +112,7 @@ def filter():
     ).fit(session['dist'])
     session['clusters'] = np.char.mod('%i', clusterer.labels_).astype('U128')
 
-    # Build dataframe for cluster-level dc metrics
+    # Build data frame for cluster-level dc metrics
     pd_data = []
     json_data = []
     for c in np.unique(session['clusters']):
@@ -244,7 +199,7 @@ def updateuserlist():
     return jsonify(json_data)
 
 
-# Get similar datapoints
+# Get similar data points
 @app.route('/similar', methods=['POST'])
 def similar():
     cluster = request.json['cluster']
@@ -255,7 +210,7 @@ def similar():
     intra_cluster_dist = {}
     for c2, r2 in session['df'].iterrows():
 
-        # If true, the user has already added images from this cluster and it is redundent to show.
+        # If true, the user has already added images from this cluster and it is redundant to show.
         if np.isin(r2.idxs, r1.idxs).any():
             continue
 
@@ -273,7 +228,7 @@ def similar():
     return jsonify(json_data)
 
 
-# Get counterfactual datapoints
+# Get counterfactual data points
 @app.route('/counter', methods=['POST'])
 def counter():
     cluster = request.json['cluster']
@@ -284,7 +239,7 @@ def counter():
     intra_cluster_dist = {}
     for c2, r2 in session['df'].iterrows():
 
-        # If true, the user has already added images from this cluster and it is redundent to show.
+        # If true, the user has already added images from this cluster and it is redundant to show.
         if np.isin(r2.idxs, r1.idxs).any():
             continue
 
@@ -324,23 +279,6 @@ def textrank():
         json_data[c] = sims[m].mean().item()
 
     return jsonify(json_data)
-
-
-@app.route('/snapshot', methods=['POST'])
-def snapshot():
-    data = request.json
-    user_root = os.path.join('./snapshots', data["code"] + '/')
-    if not os.path.exists(user_root):
-        os.mkdir(user_root)
-
-    json_path = os.path.join(
-        user_root,
-        f'{data["code"].lower()}_{data["baseline"].lower()}_{data["augment"].lower()}.json'
-    )
-    with open(json_path, 'w') as f:
-        f.write(json.dumps(request.json))
-
-    return jsonify({"status": "success"})
 
 
 @app.route('/correlation', methods=['POST'])

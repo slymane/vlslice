@@ -5,8 +5,6 @@
 	import Toolbar from './components/Toolbar.svelte';
 	import Section from './components/Section.svelte';
 	import { clusterStore, selectedStore } from './store.js';
-    import { cluster } from "d3";
-    import { detach } from "svelte/internal";
 
 	// Filtering variables
 	let enableFilter = true;
@@ -34,29 +32,6 @@
 	let modalOpen = false;
 	let newListName = "";
 	let cidToName = {};
-
-	export function snapshot() {
-		let listData = $clusterStore
-			.filter(c => c.isUserList)
-			.map(c => ({
-				"name": cidToName[c.id],
-				"images": c.images.map(i => i.iid)
-		}));
-
-		let workingSet = $clusterStore
-			.filter(c => !c.isUserList)
-			.map(c => c.images.map(i => i.iid))
-			.flat()
-	
-		return {
-			"interface": "VlSlice",
-			"baseline": baseline,
-			"augment": augment,
-			"topk": topk,
-			"lists": listData,
-			"working": workingSet
-		}
-	}
 
 	function filter(e) {
 		enableFilter = false;

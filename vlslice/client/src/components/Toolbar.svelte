@@ -1,10 +1,7 @@
 <script>
-    import { onMount } from 'svelte';
     import { createEventDispatcher } from 'svelte';
     import { hSlide } from '../transitions/hslide'
 
-    // Variables to make Eric's life easier
-	const DEV = false;
     const dispatch = createEventDispatcher();
 
     export let enableFilter;
@@ -14,16 +11,6 @@
     let sortKey = 'mean';
     let sortText = null;
     let sortReverse = true;
-    
-	onMount(async () => {
-		// Run a default query if developing
-		if (DEV) {
-			baseline = 'car';
-			augment = 'fast car';
-			topk = 100;
-			filter();
-		}
-	});
 
     function filter() {
         if (baseline == null || augment == null || topk == null) {
