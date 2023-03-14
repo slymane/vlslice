@@ -11,7 +11,6 @@ from flask import Flask, request, send_from_directory, jsonify, session
 from flask_session import Session
 import numpy as np
 import pandas as pd
-from scipy import stats
 import sklearn
 from sklearn import cluster
 
@@ -43,13 +42,13 @@ if cfg['dev']:
     embs = np.load(os.path.join(root, "embs_dev.npy"))
     lbls = np.char.decode(np.load(os.path.join(root, "lbls_dev.npy")))
     iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
-    print(f"Loading dev embeddings... Done. ({embs.shape})")
+    print(f"Loading dev embeddings... Done.")
 else:
     print("Loading all embeddings...", end='\r')
     embs = np.load(os.path.join(root, "embs_all.npy"))
     lbls = np.char.decode(np.load(os.path.join(root, "lbls_all.npy")))
     iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
-    print(f"Loading all embeddings... Done. ({embs.shape})")
+    print(f"Loading all embeddings... Done.")
 
 filt = ~np.isin(lbls, cfg['data']['exclude_classes'])
 iids = iids[filt]
@@ -293,7 +292,7 @@ def correlation():
     sim = clip_sim(session['topkembs'], centroid).squeeze()
 
     data = [{
-        "image": f"http://d30mxw38m32j53.cloudfront.net/{i.item()}",
+        "image": os.path.join(cfg['data']['img_root'], i.item()),
         "iid": i.item(),
         "sim": c.item(),
         "dcs": d.item(),

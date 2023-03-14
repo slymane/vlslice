@@ -14,3 +14,4 @@ export const selectedStore = derived(
     }
 )
 
+export const imgRoot = "https://d30mxw38m32j53.cloudfront.net"

@@ -323,7 +323,7 @@
 
 <!-- USER CLUSTER DISPLAY -->
 <Section badge={nListsDisplayed}>
-    <span slot="title">Saved Lists</span>
+    <span slot="title">Slices</span>
     <svelte:fragment slot="content">
         {#each $clusterStore as cluster (cluster.id)}
             {#if cluster.isUserList && cluster.isDisplayed}

@@ -1,5 +1,5 @@
 <script>
-    import { clusterStore } from '../../store.js';
+    import { clusterStore, imgRoot } from '../../store.js';
     import { useLazyImage as lazyImage } from 'svelte-lazy-image';
     import { createEventDispatcher } from 'svelte';
 
@@ -18,14 +18,13 @@
 </script>
 
 <div class="relative expand overflow-visible m-0">
-
     <img 
         id="img-{id}" 
         alt="Filtered dataset sample" 
         on:click|stopPropagation="{select}" 
         class="relative"
         class:selected
-        data-src="http://d30mxw38m32j53.cloudfront.net/{path}" 
+        data-src="{imgRoot}/{path}" 
         width="{size}" 
         height="{size}"
         style="cursor: pointer;"
