@@ -1,22 +1,23 @@
+import importlib.util
 import os
 import secrets
-import json
+import time
+import yaml
 
-from sklearnex import patch_sklearn
-patch_sklearn()
+# Patch sklearn-intelx if available
+spec = importlib.util.find_spec("sklearnex")
+if spec is not None:
+    from sklearnex import patch_sklearn
+    patch_sklearn()
+else:
+    print("sklearnex not found. Query clustering may be slow.")
 
 from flask import Flask, request, send_from_directory, jsonify, session
 from flask_session import Session
 import numpy as np
 import pandas as pd
-from scipy import stats
 import sklearn
 from sklearn import cluster
-import yaml
-import time
-
-# TODO: Gross
-import time
 
 from model import load_model, clip_sim, delta_c
 from utils import cart
@@ -39,30 +40,20 @@ gserv = {
     'model': None
 }
 
-# CLIENT CONTEXT
-# session['topk']
-# session['topkidxs']
-# session['topkembs']
-# session['topksims']
-# session['topkdc']
-# session['clusters']
-# session['df']
-# session['dist']
-
 # SERVER SETUP
-root = cfg['data']['hpc_path'] if 'oregonstate' in os.uname()[1] else cfg['data']['aws_path']
+root = cfg['data']['path']
 if cfg['dev']:
     print("Loading dev embeddings...", end='\r')
     embs = np.load(os.path.join(root, "embs_dev.npy"))
     lbls = np.char.decode(np.load(os.path.join(root, "lbls_dev.npy")))
     iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
-    print(f"Loading dev embeddings... Done. ({embs.shape})")
+    print(f"Loading dev embeddings... Done.")
 else:
     print("Loading all embeddings...", end='\r')
     embs = np.load(os.path.join(root, "embs_all.npy"))
     lbls = np.char.decode(np.load(os.path.join(root, "lbls_all.npy")))
     iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
-    print(f"Loading all embeddings... Done. ({embs.shape})")
+    print(f"Loading all embeddings... Done.")
 
 filt = ~np.isin(lbls, cfg['data']['exclude_classes'])
 iids = iids[filt]
@@ -114,7 +105,7 @@ def simple():
 @app.route('/filter', methods=['POST'])
 def filter():
     # Parse request
-    baseline = request.json['baseline']  # Basleline text caption
+    baseline = request.json['baseline']  # Baseline text caption
     augment = request.json['augment']    # Augmented text caption
     k = request.json['k']                # Topk results to filter
     w = request.json['w']                # Distance/DC cluster weight
@@ -139,12 +130,9 @@ def filter():
     session['topkdc'] = delta_c(session['topksims'])
 
     # Get distances
-    # Original used:
-    # dist_embs = (1 - np.matmul(session['topkembs'], session['topkembs'].transpose())).clip(0.0, 1.0)
-    # Incorrect for cosine sim, but the ranges clip outputs happens to be equivalent to 2 * correct version below.
-    dist_embs = (np.matmul(session['topkembs'], session['topkembs'].transpose()) + 1) / 2
-    dist_embs = (2 * (1 - dist_embs)).clip(0.0, 1.0)
-    dist_dc = sklearn.metrics.pairwise.euclidean_distances((session['topkdc'].reshape(-1, 1) + 1) / 2)
+    dist_embs = 1 - np.matmul(session['topkembs'], session['topkembs'].transpose()).clip(-1.0, 1.0)
+    dist_dc = sklearn.metrics.pairwise.euclidean_distances(session['topkdc'].reshape(-1, 1))
+
     session['dist'] = w * dist_embs + (1 - w) * dist_dc
 
     # Cluster
@@ -157,7 +145,7 @@ def filter():
     ).fit(session['dist'])
     session['clusters'] = np.char.mod('%i', clusterer.labels_).astype('U128')
 
-    # Build dataframe for cluster-level dc metrics
+    # Build data frame for cluster-level dc metrics
     pd_data = []
     json_data = []
     for c in np.unique(session['clusters']):
@@ -244,7 +232,7 @@ def updateuserlist():
     return jsonify(json_data)
 
 
-# Get similar datapoints
+# Get similar data points
 @app.route('/similar', methods=['POST'])
 def similar():
     cluster = request.json['cluster']
@@ -255,7 +243,7 @@ def similar():
     intra_cluster_dist = {}
     for c2, r2 in session['df'].iterrows():
 
-        # If true, the user has already added images from this cluster and it is redundent to show.
+        # If true, the user has already added images from this cluster and it is redundant to show.
         if np.isin(r2.idxs, r1.idxs).any():
             continue
 
@@ -273,7 +261,7 @@ def similar():
     return jsonify(json_data)
 
 
-# Get counterfactual datapoints
+# Get counterfactual data points
 @app.route('/counter', methods=['POST'])
 def counter():
     cluster = request.json['cluster']
@@ -284,7 +272,7 @@ def counter():
     intra_cluster_dist = {}
     for c2, r2 in session['df'].iterrows():
 
-        # If true, the user has already added images from this cluster and it is redundent to show.
+        # If true, the user has already added images from this cluster and it is redundant to show.
         if np.isin(r2.idxs, r1.idxs).any():
             continue
 
@@ -355,7 +343,7 @@ def correlation():
     sim = clip_sim(session['topkembs'], centroid).squeeze()
 
     data = [{
-        "image": f"http://d30mxw38m32j53.cloudfront.net/{i.item()}",
+        "image": os.path.join(cfg['data']['img_root'], i.item()),
         "iid": i.item(),
         "sim": c.item(),
         "dcs": d.item(),

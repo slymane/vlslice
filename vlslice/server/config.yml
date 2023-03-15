@@ -2,8 +2,8 @@ flask:
   host: 0.0.0.0
   port: 5000
 data:
-  hpc_path: /nfs/hpc/sw_data/slymane/
-  aws_path: /home/ubuntu/data/
+  path: ./data
+  img_root: https://d30mxw38m32j53.cloudfront.net/
   exclude_classes:
     - human eye
     - human skull

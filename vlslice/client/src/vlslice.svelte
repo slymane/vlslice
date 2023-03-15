@@ -5,8 +5,6 @@
 	import Toolbar from './components/Toolbar.svelte';
 	import Section from './components/Section.svelte';
 	import { clusterStore, selectedStore } from './store.js';
-    import { cluster } from "d3";
-    import { detach } from "svelte/internal";
 
 	// Filtering variables
 	let enableFilter = true;
@@ -348,7 +346,7 @@
 
 <!-- USER CLUSTER DISPLAY -->
 <Section badge={nListsDisplayed}>
-    <span slot="title">Saved Lists</span>
+    <span slot="title">Slices</span>
     <svelte:fragment slot="content">
         {#each $clusterStore as cluster (cluster.id)}
             {#if cluster.isUserList && cluster.isDisplayed}
