@@ -102,13 +102,13 @@
                     class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 
                     on:click={() => exportData(cluster, name)}
                 >
-                    Export List
+                    Export Slice
                 </button>
                 <button 
                     class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 
                     on:click={() => dispatch("deleteCluster")}
                 >
-                    Delete List
+                    Delete Slice
                 </button>
             {/if}
         </div>

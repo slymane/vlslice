@@ -175,13 +175,13 @@
                         class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 
                         on:click={() => exportData(list, lidToName[list.id])}
                     >
-                        Export List
+                        Export Slice
                     </button>
                     <button 
                         class="btn btn-xs btn-outline w-1/3 mx-2 my-1" 
                         on:click={() => deleteList(list)}
                     >
-                        Delete List
+                        Delete Slice
                     </button>
                 </div>
                 <div class="flex flex-wrap justify-left p-2">
