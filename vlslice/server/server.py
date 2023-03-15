@@ -68,7 +68,7 @@ gserv['model'] = load_model(**cfg['model'])
 @app.route('/filter', methods=['POST'])
 def filter():
     # Parse request
-    baseline = request.json['baseline']  # Basleline text caption
+    baseline = request.json['baseline']  # Baseline text caption
     augment = request.json['augment']    # Augmented text caption
     k = request.json['k']                # Topk results to filter
     w = request.json['w']                # Distance/DC cluster weight
@@ -93,12 +93,9 @@ def filter():
     session['topkdc'] = delta_c(session['topksims'])
 
     # Get distances
-    # Original used:
-    # dist_embs = (1 - np.matmul(session['topkembs'], session['topkembs'].transpose())).clip(0.0, 1.0)
-    # Incorrect for cosine sim, but the ranges clip outputs happens to be equivalent to 2 * correct version below.
-    dist_embs = (np.matmul(session['topkembs'], session['topkembs'].transpose()) + 1) / 2
-    dist_embs = (2 * (1 - dist_embs)).clip(0.0, 1.0)
-    dist_dc = sklearn.metrics.pairwise.euclidean_distances((session['topkdc'].reshape(-1, 1) + 1) / 2)
+    dist_embs = 1 - np.matmul(session['topkembs'], session['topkembs'].transpose()).clip(-1.0, 1.0)
+    dist_dc = sklearn.metrics.pairwise.euclidean_distances(session['topkdc'].reshape(-1, 1))
+
     session['dist'] = w * dist_embs + (1 - w) * dist_dc
 
     # Cluster
