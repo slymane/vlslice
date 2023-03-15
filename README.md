@@ -4,7 +4,7 @@
 
 The VLSlice client is built with a JS/Svelte client running on a Python/Flask backend. To run the server, however, only the python dependencies must be installed. The following code blocks walks through downloading precomputed image embeddings from CLIP on OpenImages, creating an appropriate Python environment with conda, and starting the VLSlice server.
 
-There are two options for download data. The "dev" embeddings contain the first million examples, and are much smaller. Those with slow internet or less than 16GB of RAM should consider this version. The "all" embeddings use all 8-million examples and requires >16GB RAM to load.
+There are two options for download data. The "dev" embeddings contain the first million examples, and are much smaller. Those with slow internet or less than 16GB of RAM should consider this version. The "all" embeddings use all 8-million examples and requires >16GB RAM to load. To change between "dev" and "all" embeddings, modify the values of "dev" in [vlslice/server/config.yml](./vlslice/server/config.yml) to `False.`
 
 ```bash
 # 1. Download Data
