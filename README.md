@@ -23,9 +23,23 @@ wget https://d30mxw38m32j53.cloudfront.net/embeddings/lbls_all.npy -O vlslice/se
 conda env create -f environment.yml
 conda activate vlslice
 
+# If using an Intel CPU, sklearn intelex can speed up clustering (optional)
+conda install scikit-learn-intelex=2021.4.0
+
 # 3. Run the server: http://127.0.0.1:5000
 cd vlslice/server
 python server.py
 ```
 
 The server should now be running locally and can be accessed at: [http://127.0.0.1:5000](http://127.0.0.1:5000).
+
+## Troubleshooting
+
+Tokenizers may fail to install on Apple Silicon machines due to the rust compiler missing. The compiler can be installed with the following command:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+```
+
+Then install the environ with Conda as described above. Conda and Pip can take some time with this installation.

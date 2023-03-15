@@ -1,11 +1,16 @@
+import importlib.util
 import os
 import secrets
-import json
 import time
 import yaml
 
-from sklearnex import patch_sklearn
-patch_sklearn()
+# Patch sklearn-intelx if available
+spec = importlib.util.find_spec("sklearnex")
+if spec is not None:
+    from sklearnex import patch_sklearn
+    patch_sklearn()
+else:
+    print("sklearnex not found. Query clustering may be slow.")
 
 from flask import Flask, request, send_from_directory, jsonify, session
 from flask_session import Session
