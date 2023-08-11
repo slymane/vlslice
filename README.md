@@ -35,7 +35,7 @@ The server should now be running locally and can be accessed at [http://127.0.0.
 
 ## Using Your Own Data / Model
 
-TODO
+Our code can be used with any ViL model that separately embeds images and text, and any image dataset. All that is required is an array of precomputed image embeddings, image URLs, and modifying the forward pass in [model.py](vlslice/server/model.py) to use your model. **Detailed tutorial coming soon.**
 
 ## Troubleshooting
 
