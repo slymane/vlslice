@@ -69,38 +69,6 @@ gserv['data'] = {
 gserv['model'] = load_model(**cfg['model'])
 
 
-# Request ranked images for simple interface
-@app.route('/simple', methods=['POST'])
-def simple():
-    # Parse request
-    baseline = request.json['baseline']  # Basleline text caption
-    augment = request.json['augment']    # Augmented text caption
-    k = request.json['k']                # Topk results to filter
-
-    # Embed text captions
-    txt_embs = gserv['model'](txt=[baseline, augment])
-    sim = clip_sim(txt_embs, gserv['data']['imgs_emb'])
-
-    # Get topk images above baseline
-    topk = np.argsort(sim[:, 0])[-k:]
-    sim = sim[topk]
-    idx = gserv['data']['imgs_idx'][topk]
-    iid = gserv['data']['imgs_iid'][topk]
-
-    # Rank images by similarity with augment
-    tops = np.argsort(sim[:, 1])[::-1]
-    idx = idx[tops]
-    iid = iid[tops]
-
-    images = [{
-        'idx': ix.item(),
-        'iid': ii.item(),
-        'selected': False
-    } for ix, ii in zip(idx, iid)]
-
-    return jsonify(images)
-
-
 # Filter to working set
 @app.route('/filter', methods=['POST'])
 def filter():
@@ -312,23 +280,6 @@ def textrank():
         json_data[c] = sims[m].mean().item()
 
     return jsonify(json_data)
-
-
-@app.route('/snapshot', methods=['POST'])
-def snapshot():
-    data = request.json
-    user_root = os.path.join('./snapshots', data["code"] + '/')
-    if not os.path.exists(user_root):
-        os.mkdir(user_root)
-
-    json_path = os.path.join(
-        user_root,
-        f'{data["code"].lower()}_{data["baseline"].lower()}_{data["augment"].lower()}.json'
-    )
-    with open(json_path, 'w') as f:
-        f.write(json.dumps(request.json))
-
-    return jsonify({"status": "success"})
 
 
 @app.route('/correlation', methods=['POST'])

@@ -33,29 +33,6 @@
 	let newListName = "";
 	let cidToName = {};
 
-	export function snapshot() {
-		let listData = $clusterStore
-			.filter(c => c.isUserList)
-			.map(c => ({
-				"name": cidToName[c.id],
-				"images": c.images.map(i => i.iid)
-		}));
-
-		let workingSet = $clusterStore
-			.filter(c => !c.isUserList)
-			.map(c => c.images.map(i => i.iid))
-			.flat()
-	
-		return {
-			"interface": "VlSlice",
-			"baseline": baseline,
-			"augment": augment,
-			"topk": topk,
-			"lists": listData,
-			"working": workingSet
-		}
-	}
-
 	function filter(e) {
 		enableFilter = false;
 		cidToName = {};

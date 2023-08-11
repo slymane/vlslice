@@ -1,9 +1,6 @@
 vlslice/client/node_modules/
-vlslice/client/public/build/
-vlslice/client/public/openimages
 vlslice/server/flask_session/
 vlslice/server/cache
-vlslice/server/snapshots/**/*.json
 
 .DS_Store
 .vscode
