@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - given-names: Eric
+    family-names: Slyman
+    email: slymane@oregonstate.edu
+    affiliation: Oregon State University
+    orcid: 'https://orcid.org/0000-0002-2481-7942'
+  - given-names: Minsuk
+    family-names: Kahng
+    email: kahngm@google.com
+    affiliation: Google Research
+    orcid: 'https://orcid.org/0000-0002-0291-6026'
+  - given-names: Stefan
+    family-names: Lee
+    orcid: 'https://orcid.org/0000-0001-5953-1963'
+    affiliation: Oregon State University
+    email: leestef@oregonstate.edu
+title: "VLSlice: Interactive Vision-and-Language Slice Discovery"
+date-released: 2023-10-01
+url: "https://github.com/slymane/vlslice"
+preferred-citation:
+  type: article
+  authors:
+  - given-names: Eric
+    family-names: Slyman
+    email: slymane@oregonstate.edu
+    affiliation: Oregon State University
+    orcid: 'https://orcid.org/0000-0002-2481-7942'
+  - given-names: Minsuk
+    family-names: Kahng
+    email: kahngm@google.com
+    affiliation: Google Research
+    orcid: 'https://orcid.org/0000-0002-0291-6026'
+  - given-names: Stefan
+    family-names: Lee
+    orcid: 'https://orcid.org/0000-0001-5953-1963'
+    affiliation: Oregon State University
+    email: leestef@oregonstate.edu
+  doi: "10.0000/00000"
+  journal: "International Conference on Computer Vision"
+  month: 10
+  title: "VLSlice: Interactive Vision-and-Language Slice Discovery"
+  year: 2023
