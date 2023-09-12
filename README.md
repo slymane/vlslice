@@ -47,3 +47,14 @@ source "$HOME/.cargo/env"
 ```
 
 Then install the environment with Conda as described above. Conda and Pip can take some time with this installation.
+
+## Citation
+```
+@article{slyman23vlslice,
+  author = {Slyman, Eric and Kahng, Minsuk and Lee, Stefan},
+  journal = {International Conference on Computer Vision (ICCV)},
+  month = oct,
+  title = {{VLSlice: Interactive Vision-and-Language Slice Discovery}},
+  year = {2023}
+}
+```
