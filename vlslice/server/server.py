@@ -36,20 +36,16 @@ app.secret_key = secrets.token_urlsafe(16)
 Session(app)
 
 # SERVER CONTEXT
-gserv = {
-    'data': {},
-    'model': None
-}
+app.config['data'] = {}
+app.config['model'] = None
 
 # SERVER SETUP
-
-
 print('Loading embeddings...', end='\r')
 lbls = np.char.decode(np.load(cfg['data']['lbls_npy']))
 filt = ~np.isin(lbls, cfg['data']['exclude_classes'])
-gserv['data']['imgs_iid'] = np.load(cfg['data']['imgs_npy'])[filt]
-gserv['data']['imgs_emb'] = np.load(cfg['data']['embs_npy'])[filt]
-gserv['data']['imgs_idx'] = np.where(filt)[0]
+app.config['data']['imgs_iid'] = np.load(cfg['data']['imgs_npy'])[filt]
+app.config['data']['imgs_emb'] = np.load(cfg['data']['embs_npy'])[filt]
+app.config['data']['imgs_idx'] = np.where(filt)[0]
 
 del lbls, filt
 print(f'Loading embeddings... Done.')
@@ -58,7 +54,7 @@ print(f'Loading embeddings... Done.')
 model = MODEL_REGISTRY[cfg['model']['name']]
 model = model(**cfg['model']['config'])
 model.eval()
-gserv['model'] = model
+app.config['model'] = model
 
 # Filter to working set
 @app.route('/filter', methods=['POST'])
@@ -77,14 +73,14 @@ def filter():
     session['topkidxs'] = None
 
     # Embed text captions
-    txt_embs = gserv['model'](txt=[baseline, augment])
-    sims = gserv['model'].similarity(txt_embs, gserv['data']['imgs_emb'])
+    txt_embs = app.config['model'](txt=[baseline, augment])
+    sims = app.config['model'].similarity(txt_embs, app.config['data']['imgs_emb'])
 
     # Filter data by captions
     session['topk'] = np.argsort(sims[:, 0])[-k:]
-    session['topkidxs'] = gserv['data']['imgs_idx'][session['topk']]
-    session['topkiids'] = gserv['data']['imgs_iid'][session['topk']]
-    session['topkembs'] = gserv['data']['imgs_emb'][session['topk']]
+    session['topkidxs'] = app.config['data']['imgs_idx'][session['topk']]
+    session['topkiids'] = app.config['data']['imgs_iid'][session['topk']]
+    session['topkembs'] = app.config['data']['imgs_emb'][session['topk']]
     session['topksims'] = sims[session['topk']]
     session['topkdc'] = delta_c(session['topksims'])
 
@@ -269,8 +265,8 @@ def counter():
 @app.route('/textrank', methods=['POST'])
 def textrank():
     # Get similarity of each image with text
-    txt_embs = gserv['model'](txt=[request.json['text']])
-    sims = gserv['model'].similarity(txt_embs, session['topkembs'])
+    txt_embs = app.config['model'](txt=[request.json['text']])
+    sims = app.config['model'].similarity(txt_embs, session['topkembs'])
 
     # Get average similarity for each cluster
     json_data = {}
@@ -290,7 +286,7 @@ def correlation():
 
     # all images X cluster similarity
     centroid = session['topkembs'][m1].mean(axis=0, keepdims=True)
-    sim = gserv['model'].similarity(session['topkembs'], centroid).squeeze()
+    sim = app.config['model'].similarity(session['topkembs'], centroid).squeeze()
 
     data = [{
         'image': i.item(),
