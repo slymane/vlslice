@@ -42,21 +42,17 @@ gserv = {
 }
 
 # SERVER SETUP
+
+
 print('Loading embeddings...', end='\r')
-embs = np.load(cfg['data']['embs_npy'])
-iids = np.load(cfg['data']['imgs_npy'])
 lbls = np.char.decode(np.load(cfg['data']['lbls_npy']))
-print(f'Loading embeddings... Done.')
-
 filt = ~np.isin(lbls, cfg['data']['exclude_classes'])
-iids = iids[filt]
-embs = embs[filt]
+gserv['data']['imgs_iid'] = np.load(cfg['data']['imgs_npy'])[filt]
+gserv['data']['imgs_emb'] = np.load(cfg['data']['embs_npy'])[filt]
+gserv['data']['imgs_idx'] = np.where(filt)[0]
 
-gserv['data'] = {
-    'imgs_iid': iids,
-    'imgs_idx': np.where(filt)[0],
-    'imgs_emb': embs
-}
+del lbls, filt
+print(f'Loading embeddings... Done.')
 
 # Load model
 model = MODEL_REGISTRY[cfg['model']['name']]
