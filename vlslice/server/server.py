@@ -93,9 +93,15 @@ def filter():
     session['topkdc'] = delta_c(session['topksims'])
 
     # Get distances
-    dist_embs = 1 - np.matmul(session['topkembs'], session['topkembs'].transpose()).clip(-1.0, 1.0)
-    dist_dc = sklearn.metrics.pairwise.euclidean_distances(session['topkdc'].reshape(-1, 1))
+    # [-1, +1] -> [+0, +2]
+    dist_embs = np.matmul(session['topkembs'], session['topkembs'].transpose()).clip(-1.0, 1.0)
+    dist_embs = 1 - dist_embs.clip(-1.0, 1.0)
+    
+    # [-1, +1] -> [+0, +2]
+    dist_dc = session['topkdc'].reshape(-1, 1)
+    dist_dc = sklearn.metrics.pairwise.euclidean_distances(dist_dc)
 
+    # Balance two distances
     session['dist'] = w * dist_embs + (1 - w) * dist_dc
 
     # Cluster
