@@ -123,7 +123,7 @@
                     path={img.iid} 
                     bind:selected={img.selected} 
                     size={imgDispSize}
-                    deleteable={cluster.isUserList}
+                    deletable={cluster.isUserList}
                     on:delete={() => dispatch("deleteImage", {"image": img})}
                 />
             {/each}
@@ -138,7 +138,7 @@
                         path={img.iid} 
                         bind:selected={img.selected} 
                         size={imgDispSize}
-                        deleteable={cluster.isUserList}
+                        deletable={cluster.isUserList}
                         on:delete={() => dispatch("deleteImage", {"image": img})}
                     />
                 {/each}

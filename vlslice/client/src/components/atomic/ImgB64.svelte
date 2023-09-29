@@ -1,5 +1,5 @@
 <script>
-    import { clusterStore, imgRoot } from '../../store.js';
+    import { clusterStore } from '../../store.js';
     import { useLazyImage as lazyImage } from 'svelte-lazy-image';
     import { createEventDispatcher } from 'svelte';
 
@@ -7,7 +7,7 @@
     export let path;
     export let size;
     export let selected;
-    export let deleteable = false;
+    export let deletable = false;
 
     const dispatch = createEventDispatcher()
 
@@ -24,14 +24,14 @@
         on:click|stopPropagation="{select}" 
         class="relative"
         class:selected
-        data-src="{imgRoot}/{path}" 
+        data-src="{path}" 
         width="{size}" 
         height="{size}"
         style="cursor: pointer;"
         use:lazyImage
     />
 
-    {#if deleteable}
+    {#if deletable}
         <div class="absolute top-1 left-1">
             <button class="btn btn-circle btn-outline btn-xs " on:click={() => dispatch("delete")}>
                 <i class="fa-solid fa-close"></i>

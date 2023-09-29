@@ -1,9 +1,11 @@
 flask:
   host: 0.0.0.0
   port: 5000
+  debug: true
 data:
-  path: ./data
-  img_root: https://d30mxw38m32j53.cloudfront.net/
+  imgs_npy: ./data/imgs.npy
+  lbls_npy: ./data/lbls.npy
+  embs_npy: ./data/embs.npy
   exclude_classes:
     - human eye
     - human skull
@@ -26,6 +28,7 @@ data:
     - door handle
     - vehicle registration plate
 model:
-  version: openai/clip-vit-base-patch16
-  device: cpu
-dev: True
+  name: hf_clip
+  config:
+    version: openai/clip-vit-base-patch16
+    device: cpu

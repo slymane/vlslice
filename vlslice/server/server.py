@@ -2,24 +2,25 @@ import importlib.util
 import os
 import secrets
 import time
+
 import yaml
 
-# Patch sklearn-intelx if available
-spec = importlib.util.find_spec("sklearnex")
+# Patch sklearn-intelex if available
+spec = importlib.util.find_spec('sklearnex')
 if spec is not None:
     from sklearnex import patch_sklearn
     patch_sklearn()
 else:
-    print("sklearnex not found. Query clustering may be slow.")
+    print('sklearnex not found. Query clustering may be slow.')
 
-from flask import Flask, request, send_from_directory, jsonify, session
-from flask_session import Session
 import numpy as np
 import pandas as pd
 import sklearn
+from flask import Flask, jsonify, request, send_from_directory, session
+from flask_session import Session
 from sklearn import cluster
 
-from model import load_model, clip_sim, delta_c
+from models import MODEL_REGISTRY, delta_c
 from utils import cart
 
 # YAML CONFIG
@@ -29,8 +30,8 @@ cfg = yaml.load(open(cfg_path, 'r'), Loader=yaml.CLoader)
 # FLASK APP CONFIG
 app = Flask(__name__)
 app.config.from_object(cfg['flask'])
-app.config["SESSION_PERMANENT"] = True
-app.config["SESSION_TYPE"] = 'filesystem'
+app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_TYPE'] = 'filesystem'
 app.secret_key = secrets.token_urlsafe(16)
 Session(app)
 
@@ -41,19 +42,11 @@ gserv = {
 }
 
 # SERVER SETUP
-root = cfg['data']['path']
-if cfg['dev']:
-    print("Loading dev embeddings...", end='\r')
-    embs = np.load(os.path.join(root, "embs_dev.npy"))
-    lbls = np.char.decode(np.load(os.path.join(root, "lbls_dev.npy")))
-    iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
-    print(f"Loading dev embeddings... Done.")
-else:
-    print("Loading all embeddings...", end='\r')
-    embs = np.load(os.path.join(root, "embs_all.npy"))
-    lbls = np.char.decode(np.load(os.path.join(root, "lbls_all.npy")))
-    iids = np.array([f'{i:08}.jpg' for i in range(embs.shape[0])])
-    print(f"Loading all embeddings... Done.")
+print('Loading embeddings...', end='\r')
+embs = np.load(cfg['data']['embs_npy'])
+iids = np.load(cfg['data']['imgs_npy'])
+lbls = np.char.decode(np.load(cfg['data']['lbls_npy']))
+print(f'Loading embeddings... Done.')
 
 filt = ~np.isin(lbls, cfg['data']['exclude_classes'])
 iids = iids[filt]
@@ -66,8 +59,10 @@ gserv['data'] = {
 }
 
 # Load model
-gserv['model'] = load_model(**cfg['model'])
-
+model = MODEL_REGISTRY[cfg['model']['name']]
+model = model(**cfg['model']['config'])
+model.eval()
+gserv['model'] = model
 
 # Filter to working set
 @app.route('/filter', methods=['POST'])
@@ -87,7 +82,7 @@ def filter():
 
     # Embed text captions
     txt_embs = gserv['model'](txt=[baseline, augment])
-    sims = clip_sim(txt_embs, gserv['data']['imgs_emb'])
+    sims = gserv['model'].similarity(txt_embs, gserv['data']['imgs_emb'])
 
     # Filter data by captions
     session['topk'] = np.argsort(sims[:, 0])[-k:]
@@ -142,14 +137,16 @@ def filter():
             } for ix, ii in zip(idx, iid)]
         })
 
-    session['df'] = pd.DataFrame(pd_data,
-                                 columns=['id', 'mean', 'var', 'size', 'idxs']).set_index('id')
+    session['df'] = pd.DataFrame(
+        pd_data,
+        columns=['id', 'mean', 'var', 'size', 'idxs']
+    ).set_index('id')
     return jsonify(json_data)
 
-
+ 
 @app.route('/userlist', methods=['POST'])
 def userlist():
-    c = f"{time.time()}"
+    c = f'{time.time()}'
     idx = np.array(request.json['idxs'])
     members = np.where(np.isin(session['topkidxs'], idx))[0]
 
@@ -174,8 +171,8 @@ def userlist():
 @app.route('/remlist', methods=['POST'])
 def remlist():
     cluster = request.json
-    session['df'].drop([cluster["id"]], inplace=True)
-    return jsonify({"status": "success"})
+    session['df'].drop([cluster['id']], inplace=True)
+    return jsonify({'status': 'success'})
 
 
 @app.route('/updateuserlist', methods=['POST'])
@@ -223,7 +220,7 @@ def similar():
     neighbors = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[1:41]
 
     json_data = {
-        "neighbors": neighbors
+        'neighbors': neighbors
     }
 
     return jsonify(json_data)
@@ -261,7 +258,7 @@ def counter():
     counters = sorted(intra_cluster_dist, key=intra_cluster_dist.get)[:40]
 
     json_data = {
-        "counters": counters
+        'counters': counters
     }
 
     return jsonify(json_data)
@@ -271,7 +268,7 @@ def counter():
 def textrank():
     # Get similarity of each image with text
     txt_embs = gserv['model'](txt=[request.json['text']])
-    sims = clip_sim(txt_embs, session['topkembs'])
+    sims = gserv['model'].similarity(txt_embs, session['topkembs'])
 
     # Get average similarity for each cluster
     json_data = {}
@@ -291,16 +288,16 @@ def correlation():
 
     # all images X cluster similarity
     centroid = session['topkembs'][m1].mean(axis=0, keepdims=True)
-    sim = clip_sim(session['topkembs'], centroid).squeeze()
+    sim = gserv['model'].similarity(session['topkembs'], centroid).squeeze()
 
     data = [{
-        "image": os.path.join(cfg['data']['img_root'], i.item()),
-        "iid": i.item(),
-        "sim": c.item(),
-        "dcs": d.item(),
-        "is_member": idx in m1
-    } for idx, (i, c, d) in enumerate(zip(session["topkiids"], sim, session["topkdc"]))]
-
+        'image': i.item(),
+        'iid': i.item(),
+        'sim': c.item(),
+        'dcs': d.item(),
+        'is_member': idx in m1
+    } for idx, (i, c, d) in enumerate(zip(session['topkiids'], sim, session['topkdc']))]
+ 
     return jsonify(data)
 
 
@@ -317,4 +314,4 @@ def home(path):
 
 
 if __name__ == '__main__':
-    app.run(host=cfg['flask']['host'], port=cfg['flask']['port'], debug=cfg['dev'])
+    app.run(**cfg['flask'])

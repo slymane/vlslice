@@ -13,5 +13,3 @@ export const selectedStore = derived(
         return [...new Set(selected)];
     }
 )
-
-export const imgRoot = "https://d30mxw38m32j53.cloudfront.net"
