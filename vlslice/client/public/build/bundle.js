@@ -22519,7 +22519,10 @@ var app = (function () {
     }
 
     function exportData(data, name) {
-    	var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+    	var toExport = data.images.map((i) => {
+    		return i.iid;
+    	});
+    	var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(toExport));
     	var downloadAnchorNode = document.createElement('a');
     	downloadAnchorNode.setAttribute("href", dataStr);
     	downloadAnchorNode.setAttribute("download", name + ".json");
