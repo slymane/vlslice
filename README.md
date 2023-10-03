@@ -1,7 +1,5 @@
 # VLSlice
 
-
-
 VLSlice is an interactive system enabling user-guided discovery of Vision-Language Slices, coherent representation-level subgroups with consistent visiolinguistic behavior, from unlabeled image sets. Slices can help identify problematic behaviors and biases learned by web-scale pretrained models. VLSlice supports users in discovering and refining slices along arbitrary bias dimensions while leveraging those slices to assist them in validating model behavior.
 
 <p align="center">
