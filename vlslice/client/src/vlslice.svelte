@@ -373,13 +373,13 @@
 			class:btn-disabled={$selectedStore.length == 0}
 			on:click={() => {modalOpen = true; newListName = ""}}
 		>
-			Add to List ({$selectedStore.length})
+			Add to Slice ({$selectedStore.length})
 		</label>
 		<ul class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 min-w-max">
 			<li>
 				<button on:click={() => {modalOpen = true; newListName = ""}}>
 					<i class="fa-solid fa-plus"></i>
-					Create a List
+					Create a Slice
 				</button>
 			</li>
 			{#each Object.entries(cidToName) as [cid, name]}
@@ -399,11 +399,11 @@
 
 <div class="modal" class:modal-open={modalOpen}>
   <div class="modal-box relative">
-    <h3 class="text-lg font-bold">Create a new list</h3>
+    <h3 class="text-lg font-bold">Create a new Slice</h3>
 	<input 
 		bind:value={newListName} 
 		type="text" 
-		placeholder="List name" 
+		placeholder="Slice name" 
 		class="input input-bordered w-full my-4 min-w-full"
 	/>
 	<div class="flex items-center justify-end">
@@ -418,7 +418,7 @@
 			class:btn-disabled={newListName == ""} 
 			on:click={addNewList}
 		>
-			Create List
+			Create Slice
 		</button>
 	</div>
   </div>

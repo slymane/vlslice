@@ -52,7 +52,7 @@
                             }
                         },
                         color: {
-                            axis: {title: "List Membership"},
+                            axis: {title: "Slice Membership"},
                             field: "is_member", 
                             type: "nominal",
                             scale: {range: ["green", "gray"]}
