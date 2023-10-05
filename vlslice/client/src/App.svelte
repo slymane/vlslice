@@ -57,7 +57,7 @@
 			<b><h4>Step 4: Validate model behavior</h4></b>
 			<p style="width: 100%">
 				Select "Show Correlation" to show a scatter plot displaying image similarity with slice centroids against affinity. A positive/negative slope
-				is indicitive of negative bias association. Clicking individual points in this plot will add/remove them from the slice.
+				is indicitive of positive/negative bias association. Clicking individual points in this plot will add/remove them from the slice.
 			</p>
 			<div class="flex items-center justify-end">
 				<button 

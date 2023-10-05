@@ -66,7 +66,7 @@
             <span class="label-text">Number Images</span>
         </label>
         <div id="filter-topk" class="input-group">
-            <input class="input input-bordered w-full" type="number" placeholder="1000" min="2" bind:value={topk}/>
+            <input class="input input-bordered w-full" type="number" placeholder="2000" min="2" bind:value={topk}/>
             <button class="btn" disabled="{enableFilter ? null : 'disabled'}" type="submit" on:click={filter}>
                 Query
                 <i class="fa-solid fa-sync ml-1" class:fa-spin={!enableFilter}></i>
