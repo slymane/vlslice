@@ -155,11 +155,12 @@ Then install the environment with Conda as described above. Conda and Pip can ta
 ## Citation
 
 ```bibtex
-@article{slyman23vlslice,
-  author = {Slyman, Eric and Kahng, Minsuk and Lee, Stefan},
-  journal = {International Conference on Computer Vision (ICCV)},
-  month = oct,
-  title = {{VLSlice: Interactive Vision-and-Language Slice Discovery}},
-  year = {2023}
+@InProceedings{Slyman_2023_ICCV,
+    author    = {Slyman, Eric and Kahng, Minsuk and Lee, Stefan},
+    title     = {VLSlice: Interactive Vision-and-Language Slice Discovery},
+    booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+    month     = {October},
+    year      = {2023},
+    pages     = {15291-15301}
 }
 ```
