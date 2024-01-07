@@ -24,7 +24,7 @@
         on:click|stopPropagation="{select}" 
         class="relative"
         class:selected
-        data-src="{path}" 
+        src="{path}" 
         width="{size}" 
         height="{size}"
         style="cursor: pointer;"
