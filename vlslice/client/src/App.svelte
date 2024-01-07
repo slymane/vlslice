@@ -1,6 +1,6 @@
 <script>
 	import VLSlice from './vlslice.svelte';
-	let iccvModalOpen = true;
+	let helpModalOpen = true;
 </script>
 
 <main class="max-w-none relative">
@@ -10,7 +10,7 @@
 		<h1 class="normal-case text-4xl p-4">VLSlice</h1>
 		<label 
 			class="btn m-1"
-			on:click={() => {iccvModalOpen = true}}
+			on:click={() => {helpModalOpen = true}}
 		>
 			Help
 		</label>
@@ -21,9 +21,9 @@
 		<VLSlice />
 	</div>
 
-	<div class="modal" class:modal-open={iccvModalOpen}>
+	<div class="modal" class:modal-open={helpModalOpen}>
 		<div class="modal-box relative">
-			<h3 class="text-lg font-bold">ICCV 2023 VLSlice Demo</h3>
+			<h3 class="text-lg font-bold">Getting Started</h3>
 	
 			<br>
 			<b><h4>Step 1: Query subjects and bias domain</h4></b>
@@ -62,7 +62,7 @@
 			<div class="flex items-center justify-end">
 				<button 
 					class="btn m-1" 
-					on:click={() => iccvModalOpen = false}
+					on:click={() => helpModalOpen = false}
 				>
 					Close
 				</button>

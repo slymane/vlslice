@@ -16,22 +16,15 @@ VLSlice is an interactive system enabling user-guided discovery of Vision-Langua
 
 The VLSlice client is built with a JS/Svelte client running on a Python/Flask backend. To run the server, however, only the Python dependencies must be installed. The following code blocks walk through downloading precomputed image embeddings from CLIP on OpenImages, creating an appropriate Python environment with conda, and starting the VLSlice server.
 
-There are two options for downloading data. The "dev" embeddings contain the first million examples and are much smaller. Those with slow internet or less than 16GB of RAM should consider this version. The "all" embeddings use all 8 million examples and require >16GB RAM to load.
+We provide demo data for running VLSlice at [oregonstate.box.com/v/vlslice-demo](https://oregonstate.box.com/v/vlslice-demo). This data contains the first million boxes extracted from OpenImages according the process described in our paper.
 
 ```bash
 # 1. Download Data
-
-# ~2GB, loads into RAM quickly.
 # Labels are used for pre-filtering OpenImages as described in Section 4.1.
-wget https://d30mxw38m32j53.cloudfront.net/embeddings/imgs_dev.npy -O vlslice/server/data/imgs.npy
-wget https://d30mxw38m32j53.cloudfront.net/embeddings/lbls_dev.npy -O vlslice/server/data/lbls.npy
-wget https://d30mxw38m32j53.cloudfront.net/embeddings/embs_dev.npy -O vlslice/server/data/embs.npy
-
-# ~16GB, can take some time to load, even with enough RAM.
-# Labels are used for pre-filtering OpenImages as described in Section 4.1.
-wget https://d30mxw38m32j53.cloudfront.net/embeddings/imgs_all.npy -O vlslice/server/data/imgs.npy
-wget https://d30mxw38m32j53.cloudfront.net/embeddings/lbls_all.npy -O vlslice/server/data/lbls.npy
-wget https://d30mxw38m32j53.cloudfront.net/embeddings/embs_all.npy -O vlslice/server/data/embs.npy
+cd vlslice/server/static/
+mv [all files downloaded from box] ./
+tar xf images.tar.gz && rm images.tar.gz
+cd -
 
 # 2. Install Python dependencies with Conda
 conda env create -f environment.yml
@@ -54,6 +47,62 @@ Our code can be used with any ViL model that separately embeds images and text, 
 ### Configuring Flask
 
 All properties set under `flask` in the [config.yml](vlslice/server/config.yml) are automatically passed as a dictionary unpacked into the flask `app.run()` call. Set whichever settings you wish for flask to use here.
+
+### Faster Image Loading
+
+Serving images from the [/static/](./vlslice/server/static/) folder with the built-in flask server (e.g., the example above) can lead to slow image loading. This can be mitigated by either moving images behind a CDN or by using a more sophisticated web server. During our user study, we used AWS [CloudFront](https://aws.amazon.com/cloudfront/) to deliver images stored on [S3](https://aws.amazon.com/s3/) and a [gunicorn](https://gunicorn.org/) web server. **We describe recommended steps for setting up a more sophisticated web server below which should be used for anything beyond the most basic exploration with VLSlice.**
+
+First, install and start a [gunicorn](https://gunicorn.org/) WSGI server from inside [vlslice/server](./vlslice/server/). The `-w` argument specifies the number of server processes.
+
+```bash
+pip install gunicorn
+gunicorn --bind localhost:5000 -w 2 server:app
+```
+
+Then, install [nginx](https://www.nginx.com/) to use as our reverse proxy. You will need to allow it firewall HTTP access.
+
+```bash
+sudo apt update
+sudo apt install nginx
+sudo ufw allow 'Nginx HTTP'
+```
+
+We will create a new nginx site for VLSlice:
+
+```bash
+sudo nano /etc/nginx/sites-available/vlslice
+```
+
+Paste the following site configuration with the absolute path to your VLSlice [static](./vlslice/server/static/) folder,
+or whatever other location you've chosen to store the images specified by `imgs.npy`, under `location /static > alias`.
+
+```yaml
+server {
+    listen 5050;
+    server_name localhost;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /static {
+        alias [ABSOLUTE PATH TO YOUR STATIC FOLDER];
+        expires 7d;
+    }
+}
+```
+
+Link the VLSlice site to active and restart nginx:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/vlslice /etc/nginx/sites-enabled
+sudo systemctl restart nginx
+```
+
+You should now be able to navigate to `localhost:5050` in a web browser and use VLSlice with significantly faster image loading.
 
 ### Using Your Own Data
 
