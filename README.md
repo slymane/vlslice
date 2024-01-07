@@ -16,7 +16,7 @@ VLSlice is an interactive system enabling user-guided discovery of Vision-Langua
 
 The VLSlice client is built with a JS/Svelte client running on a Python/Flask backend. To run the server, however, only the Python dependencies must be installed. The following code blocks walk through downloading precomputed image embeddings from CLIP on OpenImages, creating an appropriate Python environment with conda, and starting the VLSlice server.
 
-All demo data can be found at [oregonstate.box.com/v/vlslice-demo](https://oregonstate.box.com/v/vlslice-demo).
+We provide demo data for running VLSlice at [oregonstate.box.com/v/vlslice-demo](https://oregonstate.box.com/v/vlslice-demo). This data contains the first million boxes extracted from OpenImages according the process described in our paper.
 
 ```bash
 # 1. Download Data
@@ -24,6 +24,7 @@ All demo data can be found at [oregonstate.box.com/v/vlslice-demo](https://orego
 cd vlslice/server/static/
 mv [all files downloaded from box] ./
 tar xf images.tar.gz && rm images.tar.gz
+cd -
 
 # 2. Install Python dependencies with Conda
 conda env create -f environment.yml
