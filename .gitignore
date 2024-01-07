@@ -1,6 +1,8 @@
 vlslice/client/node_modules/
 vlslice/server/flask_session/
 vlslice/server/cache
+vlslice/server/static/images
+vlslice/server/static/*.npy
 
 .DS_Store
 .vscode

@@ -3,9 +3,9 @@ flask:
   port: 5000
   debug: false
 data:
-  imgs_npy: ./data/imgs.npy
-  lbls_npy: ./data/lbls.npy
-  embs_npy: ./data/embs.npy
+  imgs_npy: ./static/imgs.npy
+  lbls_npy: ./static/lbls.npy
+  embs_npy: ./static/embs.npy
   exclude_classes:
     - human eye
     - human skull
