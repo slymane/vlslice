@@ -112,14 +112,14 @@ To configure your own data, specify three numpy files in the [config.yml](vlslic
 data:
   # ndarray[string] (N) containing N image paths. 
   # e.g., "https://d30mxw38m32j53.cloudfront.net/00000000.jpg"
-  imgs_npy: ./data/imgs.npy  
+  imgs_npy: ./static/imgs.npy  
   
   # ndarray[string] (N) containing N image classes. 
   # Set to "null" to disable filtering.
-  lbls_npy: ./data/lbls.npy  
+  lbls_npy: ./static/lbls.npy  
 
   # ndarray[float] (NxD) containing N image embeddings of size D.
-  embs_npy: ./data/embs.npy  
+  embs_npy: ./static/embs.npy  
 ```
 
 VLSlice will use these files to load, filtering, and cluster your images. All files are expected to share the same index order. If you wish to exclude any class of images from display in VLSlice (e.g., to remove redundant subparts of people), then the target class to be removed may be specified under `exclude_classes`.
